@@ -5,5 +5,5 @@ find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
-add_executable(Compiler main.cpp ./lexer/lexer.cpp  )
+add_executable(Compiler main.cpp ./lexer/lexer.cpp  ./parser/parse.cpp)
 target_link_libraries(Compiler LLVM)

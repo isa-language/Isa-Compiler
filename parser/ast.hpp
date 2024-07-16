@@ -1,176 +1,79 @@
 #pragma once
-#include <iostream>
-#include <string>
 #include <vector>
 #include <memory>
-
-enum class ASTNodeType {
-    PROGRAM,
-    DECLARATION,
-    VARIABLE_DECLARATION,
-    FUNCTION_DECLARATION,
-    STRUCT_DECLARATION,
-    STATEMENT,
-    EXPRESSION,
-    LITERAL,
-    IDENTIFIER,
-    BINARY_EXPRESSION,
-    FUNCTION_CALL,
-    IF_STATEMENT,
-    WHILE_STATEMENT,
-    FOR_STATEMENT,
-    SWITCH_STATEMENT,
-    CASE,
-    RETURN_STATEMENT,
-    PRINT_STATEMENT,
-    ASSIGNMENT_STATEMENT,
-    STRUCT_EXPRESSION,
-    ARRAY_EXPRESSION,
-    UNKNOWN
-};
+#include <string>
+#include <iostream>
 
 class ASTNode {
 public:
-    ASTNodeType type;
-    ASTNode(ASTNodeType t) : type(t) {}
     virtual ~ASTNode() = default;
+    virtual void print(int indent = 0) const = 0;
 };
 
 class ProgramNode : public ASTNode {
 public:
-    std::vector<std::shared_ptr<ASTNode>> declarations;
-    ProgramNode() : ASTNode(ASTNodeType::PROGRAM) {}
-};
+    std::vector<std::unique_ptr<ASTNode>> declarations;
 
-class DeclarationNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> declaration;
-    DeclarationNode() : ASTNode(ASTNodeType::DECLARATION) {}
+    void print(int indent = 0) const override {
+        for (const auto& decl : declarations) {
+            decl->print(indent);
+        }
+    }
 };
 
 class VariableDeclarationNode : public ASTNode {
 public:
-    std::string varType;
+    std::string type;
     std::string identifier;
-    std::shared_ptr<ASTNode> expression;
-    VariableDeclarationNode() : ASTNode(ASTNodeType::VARIABLE_DECLARATION) {}
+    std::unique_ptr<ASTNode> expression;
+
+    VariableDeclarationNode(const std::string& type, const std::string& identifier, std::unique_ptr<ASTNode> expression)
+        : type(type), identifier(identifier), expression(std::move(expression)) {}
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "VariableDeclaration: " << type << " " << identifier << std::endl;
+        if (expression) {
+            expression->print(indent + 2);
+        }
+    }
 };
 
 class FunctionDeclarationNode : public ASTNode {
 public:
-    std::string returnType;
     std::string identifier;
-    std::vector<std::shared_ptr<ASTNode>> parameters;
-    std::vector<std::shared_ptr<ASTNode>> body;
-    FunctionDeclarationNode() : ASTNode(ASTNodeType::FUNCTION_DECLARATION) {}
+    std::string returnType;
+    std::unique_ptr<ASTNode> body;
+
+    FunctionDeclarationNode(const std::string& identifier, const std::string& returnType, std::unique_ptr<ASTNode> body)
+        : identifier(identifier), returnType(returnType), body(std::move(body)) {}
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "FunctionDeclaration: " << identifier << " -> " << returnType << std::endl;
+        if (body) {
+            body->print(indent + 2);
+        }
+    }
 };
 
 class StructDeclarationNode : public ASTNode {
 public:
     std::string identifier;
-    std::vector<std::shared_ptr<ASTNode>> members;
-    std::shared_ptr<ASTNode> constructor;
-    StructDeclarationNode() : ASTNode(ASTNodeType::STRUCT_DECLARATION) {}
+
+    StructDeclarationNode(const std::string& identifier) : identifier(identifier) {}
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "StructDeclaration: " << identifier << std::endl;
+    }
 };
 
-class ExpressionNode : public ASTNode {
+class BlockNode : public ASTNode {
 public:
-    ExpressionNode() : ASTNode(ASTNodeType::EXPRESSION) {}
-};
+    std::vector<std::unique_ptr<ASTNode>> statements;
 
-class LiteralNode : public ASTNode {
-public:
-    std::string value;
-    LiteralNode(const std::string& val) : ASTNode(ASTNodeType::LITERAL), value(val) {}
-};
-
-class IdentifierNode : public ASTNode {
-public:
-    std::string name;
-    IdentifierNode(const std::string& n) : ASTNode(ASTNodeType::IDENTIFIER), name(n) {}
-};
-
-class BinaryExpressionNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> left;
-    std::string op;
-    std::shared_ptr<ASTNode> right;
-    BinaryExpressionNode() : ASTNode(ASTNodeType::BINARY_EXPRESSION) {}
-};
-
-class FunctionCallNode : public ASTNode {
-public:
-    std::string identifier;
-    std::vector<std::shared_ptr<ASTNode>> arguments;
-    FunctionCallNode() : ASTNode(ASTNodeType::FUNCTION_CALL) {}
-};
-
-class IfStatementNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> condition;
-    std::vector<std::shared_ptr<ASTNode>> thenBranch;
-    std::vector<std::shared_ptr<ASTNode>> elseBranch;
-    IfStatementNode() : ASTNode(ASTNodeType::IF_STATEMENT) {}
-};
-
-class WhileStatementNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> condition;
-    std::vector<std::shared_ptr<ASTNode>> body;
-    WhileStatementNode() : ASTNode(ASTNodeType::WHILE_STATEMENT) {}
-};
-
-class ForStatementNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> initialization;
-    std::shared_ptr<ASTNode> condition;
-    std::shared_ptr<ASTNode> update;
-    std::vector<std::shared_ptr<ASTNode>> body;
-    ForStatementNode() : ASTNode(ASTNodeType::FOR_STATEMENT) {}
-};
-
-class SwitchStatementNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> expression;
-    std::vector<std::shared_ptr<ASTNode>> cases;
-    SwitchStatementNode() : ASTNode(ASTNodeType::SWITCH_STATEMENT) {}
-};
-
-class CaseNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> expression;
-    std::vector<std::shared_ptr<ASTNode>> body;
-    CaseNode() : ASTNode(ASTNodeType::CASE) {}
-};
-
-class ReturnStatementNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> expression;
-    ReturnStatementNode() : ASTNode(ASTNodeType::RETURN_STATEMENT) {}
-};
-
-class PrintStatementNode : public ASTNode {
-public:
-    std::shared_ptr<ASTNode> expression;
-    PrintStatementNode() : ASTNode(ASTNodeType::PRINT_STATEMENT) {}
-};
-
-class AssignmentStatementNode : public ASTNode {
-public:
-    std::string identifier;
-    std::shared_ptr<ASTNode> expression;
-    AssignmentStatementNode() : ASTNode(ASTNodeType::ASSIGNMENT_STATEMENT) {}
-};
-
-class StructExpressionNode : public ASTNode {
-public:
-    std::string identifier;
-    std::vector<std::pair<std::string, std::shared_ptr<ASTNode>>> fields;
-    StructExpressionNode() : ASTNode(ASTNodeType::STRUCT_EXPRESSION) {}
-};
-
-class ArrayExpressionNode : public ASTNode {
-public:
-    std::vector<std::shared_ptr<ASTNode>> elements;
-    ArrayExpressionNode() : ASTNode(ASTNodeType::ARRAY_EXPRESSION) {}
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "Block" << std::endl;
+        for (const auto& stmt : statements) {
+            stmt->print(indent + 2);
+        }
+    }
 };

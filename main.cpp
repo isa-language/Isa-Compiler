@@ -1,62 +1,29 @@
 #include "lexer/lexer.hpp"
-
+//#include "parser/parser.hpp"
+#include <iostream>
+#include <vector>
+#include <memory>
 
 
 int main() {
-    std::string source = R"(
-        let: i32 num = 10;
-        let: f32 ponto = 0.40;
-        let: [i32, 3] vetor = { 10, 5, 3 };
-        let: str[10] fixed_str = "Hello";
-        let: string dynamic_str = "Olá, mundo Isa! 1";
-        
-        struct Tipo {
-            let: i32 value;
-            let: string nome;
+    std::string sourceCode = R"(
+        struct Node {
+            let: i32 num;
+            let: string; 
+            let : Node
+        }
 
-            fn new(v: i32, n: string) -> Tipo {
-                let: Tipo t = Tipo { value = v, nome = n };
-                return t;
-            }
-        };
-
-        fn main() -> i32 {
-            let: Tipo t = Tipo::new(42, "Exemplo");
-            for (let: i8 i = 0; i < 10; i++) {
-                println("{}", i);
-            }
-
-            while (num > 0) {
-                println("{}", num);
-                num = num - 1;
-            }
-
-            if (num == 0) {
-                println("End of loop");
-            } else {
-                println("Error");
-            }
-
-            switch (num) {
-                case 0:
-                    println("Zero");
-                    break;
-                case 1:
-                    println("One");
-                    break;
-                default:
-                    println("Other");
-            }
-
-            return 0;
+        fn main() -> void {
+            let i32 x = 42;
+            println("{x}");
         }
     )";
 
-    Lexer lexer(source);
+    Lexer lexer(sourceCode);
     std::vector<Token> tokens = lexer.tokenize();
 
     for (const auto& token : tokens) {
-        std::cout << "Token: " << static_cast<int>(token.type) << ", Value: " << token.value << std::endl;
+        std::cout << "Token: " << static_cast<int>(token.type) << " Value: " << token.value << "\n";
     }
 
     return 0;

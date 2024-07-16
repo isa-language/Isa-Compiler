@@ -11,7 +11,8 @@ bool isOperator(char ch) {
 
 bool isDoubleOperator(char ch1, char ch2) {
     return (ch1 == '=' && ch2 == '=') || (ch1 == '!' && ch2 == '=') ||
-           (ch1 == '<' && ch2 == '=') || (ch1 == '>' && ch2 == '=');
+           (ch1 == '<' && ch2 == '=') || (ch1 == '>' && ch2 == '=') ||
+           (ch1 == '-' && ch2 == '>');
 }
 
 std::vector<Token> Lexer::tokenize() {
@@ -48,7 +49,6 @@ std::vector<Token> Lexer::tokenize() {
     return tokens;
 }
 
-
 Token Lexer::recognizeIdentifier() {
     size_t start = position;
     while (isalnum(source[position]) || source[position] == '_') {
@@ -81,7 +81,7 @@ Token Lexer::recognizeString() {
     return Token(TokenType::STRING_LITERAL, value);
 }
 
- Token Lexer::recognizeBool() {
+Token Lexer::recognizeBool() {
     size_t start = position;
     while (isalpha(source[position])) {
         position++;
@@ -102,4 +102,3 @@ Token Lexer::recognizeOperator() {
         return Token(TokenType::OPERATOR, std::string(1, current));
     }
 }
-
