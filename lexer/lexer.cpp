@@ -1,104 +1,169 @@
-#include "lexer.hpp"
-#include <vector>
+    #include <iostream>
+    #include <vector>
+    #include <string>
+    #include <cctype>
+    #include <unordered_map>
+    #include "token.hpp"
 
-bool isSeparator(char ch) {
-    return ch == ';' || ch == ',' || ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == ':' || ch == '[' || ch == ']';
-}
+    class Lexer {
+    public:
+        Lexer(const std::string& source)
+            : source(source), position(0), line(1), column(1) {}
 
-bool isOperator(char ch) {
-    return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '=' || ch == '!' || ch == '<' || ch == '>';
-}
+        std::vector<Token> tokenize() {
+            std::vector<Token> tokens;
+            while (position < source.length()) {
+                char currentChar = source[position];
 
-bool isDoubleOperator(char ch1, char ch2) {
-    return (ch1 == '=' && ch2 == '=') || (ch1 == '!' && ch2 == '=') ||
-           (ch1 == '<' && ch2 == '=') || (ch1 == '>' && ch2 == '=') ||
-           (ch1 == '-' && ch2 == '>');
-}
-
-std::vector<Token> Lexer::tokenize() {
-    std::vector<Token> tokens;
-
-    while (position < source.size()) {
-        char current = source[position];
-
-        if (isspace(current)) {
-            position++;
-            continue;
+                if (isspace(currentChar)) {
+                    handleWhitespace();
+                } else if (isalpha(currentChar) || currentChar == '_') {
+                    tokens.push_back(handleIdentifierOrKeyword());
+                } else if (isdigit(currentChar)) {
+                    tokens.push_back(handleNumber());
+                } else if (currentChar == '\"') {
+                    tokens.push_back(handleStringLiteral());
+                } else {
+                    tokens.push_back(handleOperatorOrDelimiter());
+                }
+            }
+            tokens.emplace_back(TOK_EOF, "", line, column);
+            return tokens;
         }
 
-        if (isalpha(current) || current == '_') {
-            tokens.push_back(recognizeIdentifier());
-        } else if (isdigit(current)) {
-            tokens.push_back(recognizeNumber());
-        } else if (current == '"') {
-            tokens.push_back(recognizeString());
-        } else if (current == 't' || current == 'f') {
-            tokens.push_back(recognizeBool());
-        } else if (isSeparator(current)) {
-            tokens.emplace_back(TokenType::SEPARATOR, std::string(1, current));
-            position++;
-        } else if (isOperator(current)) {
-            tokens.push_back(recognizeOperator());
-        } else {
-            tokens.emplace_back(TokenType::UNKNOWN, std::string(1, current));
-            position++;
+    private:
+        std::string source;
+        size_t position;
+        int line;
+        int column;
+
+        void handleWhitespace() {
+            while (isspace(source[position])) {
+                if (source[position] == '\n') {
+                    line++;
+                    column = 0;
+                }
+                position++;
+                column++;
+            }
         }
-    }
 
-    tokens.emplace_back(TokenType::END_OF_FILE, "");
-    return tokens;
-}
+        Token handleIdentifierOrKeyword() {
+            int startColumn = column;
+            std::string value;
+            while (isalnum(source[position]) || source[position] == '_') {
+                value += source[position];
+                position++;
+                column++;
+            }
 
-Token Lexer::recognizeIdentifier() {
-    size_t start = position;
-    while (isalnum(source[position]) || source[position] == '_') {
-        position++;
-    }
-    std::string value = source.substr(start, position - start);
-    return Token(keywords.count(value) ? keywords.at(value) : TokenType::IDENTIFIER, value);
-}
+            static const std::unordered_map<std::string, TokenType> keywords = {
+                {"let", TOK_LET}, {"fn", TOK_FN}, {"struct", TOK_STRUCT}, {"return", TOK_RETURN},
+                {"for", TOK_FOR}, {"while", TOK_WHILE}, {"if", TOK_IF}, {"else", TOK_ELSE},
+                {"switch", TOK_SWITCH}, {"case", TOK_CASE}, {"default", TOK_DEFAULT}, {"new", TOK_NEW}
+            };
 
-Token Lexer::recognizeNumber() {
-    size_t start = position;
-    bool isFloat = false;
-    while (isdigit(source[position]) || source[position] == '.') {
-        if (source[position] == '.') {
-            isFloat = true;
+            auto it = keywords.find(value);
+            if (it != keywords.end()) {
+                return Token(it->second, value, line, startColumn);
+            }
+
+            static const std::unordered_map<std::string, TokenType> types = {
+                {"i8", TOK_TYPE}, {"i16", TOK_TYPE}, {"i32", TOK_TYPE}, {"i64", TOK_TYPE},
+                {"u8", TOK_TYPE}, {"u16", TOK_TYPE}, {"u32", TOK_TYPE}, {"u64", TOK_TYPE},
+                {"f8", TOK_TYPE}, {"f16", TOK_TYPE}, {"f32", TOK_TYPE}, {"f64", TOK_TYPE},
+                {"bool", TOK_TYPE}, {"string", TOK_TYPE}
+            };
+
+            it = types.find(value);
+            if (it != types.end()) {
+                return Token(it->second, value, line, startColumn);
+            }
+
+            return Token(TOK_IDENTIFIER, value, line, startColumn);
         }
-        position++;
-    }
-    std::string value = source.substr(start, position - start);
-    return Token(isFloat ? TokenType::FLOAT_LITERAL : TokenType::INTEGER_LITERAL, value);
-}
 
-Token Lexer::recognizeString() {
-    size_t start = ++position; // Skip the opening quote
-    while (source[position] != '"' && position < source.size()) {
-        position++;
-    }
-    std::string value = source.substr(start, position - start);
-    position++; // Skip the closing quote
-    return Token(TokenType::STRING_LITERAL, value);
-}
+        Token handleNumber() {
+            int startColumn = column;
+            std::string value;
+            bool isFloat = false;
+            while (isdigit(source[position]) || source[position] == '.') {
+                if (source[position] == '.') {
+                    if (isFloat) break; 
+                    isFloat = true;
+                }
+                value += source[position];
+                position++;
+                column++;
+            }
+            return Token(isFloat ? TOK_FLOAT_LITERAL : TOK_INTEGER_LITERAL, value, line, startColumn);
+        }
 
-Token Lexer::recognizeBool() {
-    size_t start = position;
-    while (isalpha(source[position])) {
-        position++;
-    }
-    std::string value = source.substr(start, position - start);
-    return Token(TokenType::BOOL_LITERAL, value);
-}
+        Token handleStringLiteral() {
+            int startColumn = column;
+            std::string value;
+            position++; 
+            column++;
+            while (position < source.length() && source[position] != '\"') {
+                value += source[position];
+                position++;
+                column++;
+            }
+            position++; 
+            column++;
+            return Token(TOK_STRING_LITERAL, value, line, startColumn);
+        }
 
-Token Lexer::recognizeOperator() {
-    char current = source[position];
-    char next = (position + 1 < source.size()) ? source[position + 1] : '\0';
-
-    if (isDoubleOperator(current, next)) {
-        position += 2;
-        return Token(TokenType::OPERATOR, std::string(1, current) + next);
-    } else {
-        position++;
-        return Token(TokenType::OPERATOR, std::string(1, current));
-    }
-}
+        Token handleOperatorOrDelimiter() {
+            int startColumn = column;
+            char currentChar = source[position];
+            position++;
+            column++;
+            switch (currentChar) {
+                case '=':
+                    if (source[position] == '=') {
+                        position++;
+                        column++;
+                        return Token(TOK_EQUAL, "==", line, startColumn);
+                    }
+                    return Token(TOK_ASSIGN, "=", line, startColumn);
+                case ';': return Token(TOK_SEMICOLON, ";", line, startColumn);
+                case ',': return Token(TOK_COMMA, ",", line, startColumn);
+                case '(': return Token(TOK_LPAREN, "(", line, startColumn);
+                case ')': return Token(TOK_RPAREN, ")", line, startColumn);
+                case '{': return Token(TOK_LBRACE, "{", line, startColumn);
+                case '}': return Token(TOK_RBRACE, "}", line, startColumn);
+                case '[': return Token(TOK_LBRACKET, "[", line, startColumn);
+                case ']': return Token(TOK_RBRACKET, "]", line, startColumn);
+                case '+': return Token(TOK_PLUS, "+", line, startColumn);
+                case '-': return Token(TOK_MINUS, "-", line, startColumn);
+                case '*': return Token(TOK_STAR, "*", line, startColumn);
+                case '/': return Token(TOK_SLASH, "/", line, startColumn);
+                case '!':
+                    if (source[position] == '=') {
+                        position++;
+                        column++;
+                        return Token(TOK_NOT_EQUAL, "!=", line, startColumn);
+                    }
+                    break;
+                case '<':
+                    if (source[position] == '=') {
+                        position++;
+                        column++;
+                        return Token(TOK_LE, "<=", line, startColumn);
+                    }
+                    return Token(TOK_LT, "<", line, startColumn);
+                case '>':
+                    if (source[position] == '=') {
+                        position++;
+                        column++;
+                        return Token(TOK_GE, ">=", line, startColumn);
+                    }
+                    return Token(TOK_GT, ">", line, startColumn);
+                case ':': return Token(TOK_COLON, ":", line, startColumn);
+                case '.': return Token(TOK_DOT, ".", line, startColumn);
+                default: break;
+            }
+            return Token(TOK_ERROR, std::string(1, currentChar), line, startColumn);
+        }
+    };

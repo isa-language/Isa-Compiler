@@ -1,0 +1,37 @@
+{
+    "type": "FunctionDeclaration",
+    "name": "add",
+    "params": [
+        {
+            "type": "Parameter",
+            "dataType": "i32",
+            "name": "a"
+        },
+        {
+            "type": "Parameter",
+            "dataType": "i32",
+            "name": "b"
+        }
+    ],
+    "returnType": "i32",
+    "body": {
+        "type": "BlockStatement",
+        "body": [
+            {
+                "type": "ReturnStatement",
+                "argument": {
+                    "type": "BinaryExpression",
+                    "operator": "+",
+                    "left": {
+                        "type": "Identifier",
+                        "name": "a"
+                    },
+                    "right": {
+                        "type": "Identifier",
+                        "name": "b"
+                    }
+                }
+            }
+        ]
+    }
+}

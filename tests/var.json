@@ -1,0 +1,19 @@
+{
+    "type": "VariableDeclaration",
+    "kind": "let",
+    "declarations": [
+        {
+            "type": "VariableDeclarator",
+            "id": {
+                "type": "Identifier",
+                "name": "num"
+            },
+            "init": {
+                "type": "Literal",
+                "value": 10,
+                "raw": "10"
+            },
+            "dataType": "i32"
+        }
+    ]
+}

@@ -27,6 +27,7 @@ Uma variável é declarada usando a palavra-chave `let`, seguida do tipo, identi
 
 ```bnf
 <variable_declaration> ::= "let" ":" <type> <identifier> "=" <expression> ";"
+                         | "let" ":" <type> <identifier> ";"
 ```
 
 Os tipos suportados incluem inteiros, floats, booleanos, strings, arrays de tamanho fixo e structs.
@@ -36,14 +37,19 @@ Os tipos suportados incluem inteiros, floats, booleanos, strings, arrays de tama
          | "i16"
          | "i32"
          | "i64"
-         | "f8"
+         | "u8"
+         | "u16"
+         | "u32"
+         | "u64"
          | "f16"
          | "f32"
          | "f64"
          | "bool"
          | "string"
          | "str[" <integer_literal> "]"
-         | "[" <type> "," <integer_literal> "]"
+         | "array[" <type> "," <integer_literal> "]"
+         | <type> "*"
+         | <type> "&"
          | <identifier>  ; para structs
 ```
 
@@ -93,7 +99,7 @@ Instruções podem ser declarações de variáveis, expressões, retornos, laço
 
 <expression_statement> ::= <expression> ";"
 <return_statement> ::= "return" <expression> ";"
-<print_statement> ::= "println" "(" <string_literal> "," <identifier> ")" ";"
+<print_statement> ::= "println" "(" <string_literal> "," <expression> ")" ";"
 <assignment_statement> ::= <identifier> "=" <expression> ";"
 ```
 
@@ -146,6 +152,8 @@ Expressões podem ser literais, identificadores, operações binárias, chamadas
                | <array_expression>
                | <struct_expression>
                | <function_call>
+               | <pointer_expression>
+               | <reference_expression>
 
 <binary_expression> ::= <expression> <binary_operator> <expression>
 <binary_operator> ::= "+" | "-" | "*" | "/" | "==" | "!=" | "<" | ">" | "<=" | ">="
@@ -180,6 +188,9 @@ Expressões podem ser literais, identificadores, operações binárias, chamadas
                   | <expression> "," <argument_list>
 
 <identifier> ::= [a-zA-Z_][a-zA-Z0-9_]*
+
+<pointer_expression> ::= "new" <type> "(" <expression> ")"
+<reference_expression> ::= "&" <identifier>
 ```
 
 ### 5. Exemplo de Código Expandido
@@ -188,9 +199,11 @@ Abaixo, um exemplo de código utilizando a gramática descrita:
 ```plaintext
 let: i32 num = 10;
 let: f32 ponto = 0.40;
-let: [i32, 3] vetor = { 10, 5, 3 };
-let: str[10] fixed_str = "Isa";
-let: string dynamic_str = "Olá, mundo ISA!";
+let: array[i32, 3] vetor = { 10, 5, 3 };
+let: str[10] fixed_str = "Olá, mundo!";
+let: string dynamic_str = "Olá, mundo! Isa";
+let: u8 small_number = 255;
+let: u32 large_number = 4294967295;
 
 struct Tipo {
     let: i32 value;
@@ -229,6 +242,10 @@ fn main() -> i32 {
         default:
             println("Other");
     }
+
+    let: i32 *p_num = new i32(10);
+    let: i32 &ref_num = num;
+    ref_num = 20;
 
     return 0;
 }
