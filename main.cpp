@@ -1,7 +1,7 @@
-#include "lexer/lexer.hpp"
+#include "src/lexer.hpp"
 //#include "parser/parser.hpp"
 //#include "parser/ast.hpp"
-
+#include "src/token.hpp"
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -63,8 +63,9 @@ int main() {
 
             return 0;
         }
-        )";
+    )";
 
+    
     Lexer lexer(code);
     auto tokens = lexer.tokenize();
 
