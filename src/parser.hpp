@@ -9,7 +9,10 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 /* includes libs c */
+#include <llvm/Support/raw_ostream.h>
 #include <memory>
+#include <string>
+#include <system_error>
 /* includes files project */
 // #include "lexer.hpp"
 #include "token.hpp"
@@ -18,23 +21,30 @@
 class IsaLLVM {
   public:
     IsaLLVM() {
-
+    
+    initModuleLLVM();
   }
   /**
    * Execute program
    **/
   void exec(const std::vector<Token>& program) {
-    
-  }
   /**
-   * 1 parser compiler AST
-   *
-   * 2 codegen compiler LLVM
-   *
-   * compiler(AST)
-   * salve module IR to file 
-   * */
-   // salveModuleFile("./out.ll");
+    * 1 parser compiler AST
+    *
+    * 2 codegen compiler LLVM
+    *
+    * compiler(AST)
+    
+    * */ 
+    module->print(llvm::outs(), nullptr);
+    // * salve module IR to file 
+    salveModuleFile("out.ll");
+  }
+
+  void exec(const std::vector<Token>& program, const std::string& filename) {
+    salveModuleFile(filename);
+  }
+ 
   private:
   /**
    * Function LLVM Init
@@ -43,6 +53,12 @@ class IsaLLVM {
     /* new context and module */
     context = std::make_unique<llvm::LLVMContext>();
     module = std::make_unique<llvm::Module>("IsaLLVM", *context);  
+  }
+  
+  void salveModuleFile(const std::string& filename) {
+    std::error_code errorCode;
+    llvm::raw_fd_ostream fdLL(filename, errorCode);
+    module->print(fdLL, nullptr);
   }
 
   /**
@@ -64,6 +80,10 @@ class IsaLLVM {
    **/
 
   std::unique_ptr<llvm::IRBuilder<>> builder;
+  /**
+   * O IRBuilder é uma class auxiliary que facilita a construção de instruções LLVM IR 
+   * */
+
 };
 
 #endif // !

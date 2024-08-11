@@ -2,6 +2,7 @@
 //#include "parser/parser.hpp"
 //#include "parser/ast.hpp"
 #include "src/token.hpp"
+#include "src/parser.hpp"
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -11,9 +12,11 @@
 
 
 int main() {
+
+    /* Exemplo code */
     std::string code = R"(let: i32 num = 10;
         let: f32 ponto = 0.40;
-        let: array[i32, 3] vetor = { 10, 5, 3 };
+        let: array[i32, 3] vector = { 10, 5, 3 };
         let: str[10] fixed_str = "Hello";
         let: string dynamic_str = "Hello, World!";
         let: u8 small_number = 255;
@@ -64,7 +67,12 @@ int main() {
             return 0;
         }
     )";
-
+    
+    /**
+    * 
+    * Lexer generetor.
+    *
+    */
     
     Lexer lexer(code);
     auto tokens = lexer.tokenize();
@@ -72,6 +80,17 @@ int main() {
     for (const auto& token : tokens) {
         std::cout << "Token(" << token.type << ", \"" << token.value << "\", " << token.line << ", " << token.column << ")\n";
     }
+
+    /**
+     * Compiler instance
+     * implemented instance Compiler 
+     * O methodo exec receberar um vector de tokens para o parser AST 
+     * */
+    IsaLLVM isa;
+
+    isa.exec(tokens);
+    
+
 
     return 0;
 }
