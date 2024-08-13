@@ -87,7 +87,6 @@ int main() {
      * O methodo exec receberar um vector de tokens para o parser AST 
      * */
     IsaLLVM isa;
-
     isa.exec(tokens);
     
 
