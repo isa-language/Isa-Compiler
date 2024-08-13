@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
-project(Compiler)
+project(IsaLLVM)
 
 find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
-add_executable(Compiler main.cpp ./src/lexer.cpp)
-target_link_libraries(Compiler LLVM)
+add_executable(isa main.cpp ./src/lexer.cpp)
+target_link_libraries(isa LLVM)
 
 # clang++ -S -emit-llvm ex.cpp -o ex.ll
 # clang++ -emit-llvm ex.cpp -o ex.bc

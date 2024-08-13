@@ -12,8 +12,8 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/DerivedTypes.h>
-/* includes libs c */
 #include <llvm/Support/raw_ostream.h>
+/* includes libs c */
 #include <memory>
 #include <string>
 #include <system_error>
@@ -40,8 +40,8 @@ class IsaLLVM {
     * 2 codegen compiler LLVM
     *
     * compiler(AST)
-    
     **/
+
     // 2 -> codegen 
     compiler();
     module->print(llvm::outs(), nullptr);
