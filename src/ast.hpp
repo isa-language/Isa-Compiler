@@ -15,13 +15,18 @@
 #include <string>
 #include <vector>
 
-enum class ExpType {
+enum class Type {
   NUMBER,
   STRING,
   SYMBOL,
   LIST
 };
 
+struct ExpType {
+  Type type;
+  TokenType token;
+  ExpType(Type type, TokenType token) : type{type}, token{token} {}
+};
 
 class ASTNode {
   public:
@@ -59,13 +64,13 @@ public:
 
 class VariableExpAST : public ASTNode {
   //std::string name;
-  std::unique_ptr<Token> type;
+  std::unique_ptr<ExpType> type;
   std::unique_ptr<IdentifierExprAST> identifier;
   std::unique_ptr<ASTNode> expression; 
 
 
 
-  VariableExpAST(std::unique_ptr<Token> type, std::unique_ptr<IdentifierExprAST> identifier, std::unique_ptr<ASTNode> expression) :
+  VariableExpAST(std::unique_ptr<ExpType> type, std::unique_ptr<IdentifierExprAST> identifier, std::unique_ptr<ASTNode> expression) :
                                         type(std::move(type)),
                                         identifier(std::move(identifier)), 
                                         expression(std::move(expression)) {}
