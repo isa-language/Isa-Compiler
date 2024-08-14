@@ -26,7 +26,6 @@ enum class ExpType {
 class ASTNode {
   public:
     virtual ~ASTNode() = default;
-    
     virtual llvm::Value* codegen() = 0;
 
 };
@@ -39,6 +38,7 @@ using ASTNodePtr = std::unique_ptr<ASTNode>;
  * */
 class Program : public ASTNode {
   public:
+    Program() {}
     std::vector<ASTNodePtr> program;
 
     void addDeclaration(ASTNodePtr declaration) {

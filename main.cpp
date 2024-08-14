@@ -4,18 +4,19 @@
 #include "src/token.hpp"
 #include "src/parser.hpp"
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <sstream>
 
 std::string fileopen(const std::string& filename) {
-    std::fstream fs;
+    std::fstream fs(filename, std::fstream::in);
     std::stringstream ss;
-    fs.open(filename , std::fstream::in);
-    if(fs.is_open()) {
-        ss << fs.rdbuf();
+    if(!fs.is_open()) {
+        throw std::runtime_error("Não foi possivel abrir o arquivo! " + filename);
     }
+    ss << fs.rdbuf();
     fs.close();
     return ss.str();
 }
