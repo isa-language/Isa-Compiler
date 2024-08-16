@@ -2,7 +2,8 @@
  * IsaLLVMCompiler -> parser abstract syntax tree 
  * */
 #pragma once
-#include <llvm/ADT/STLExtras.h>
+// #include <llvm/ADT/STLExtras.h>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #ifndef IsaLLVMParserAST
@@ -42,8 +43,9 @@ public:
         //programa->addDeclaration(parserStruct());
       } else if(getToken().type == TokenType::TOK_FN) {
         
-      } else if(getToken().type == TokenType::TOK_LE) {
-      
+      } else if(getToken().type == TokenType::TOK_LET) {
+        parseVarDeclType();
+        advancedToken();
       }
     }
     
@@ -73,17 +75,20 @@ public:
   std::unique_ptr<ExpType> parseVarDeclType() {
     advancedToken();
     if(getToken().type == TokenType::TOK_COLON) {
+      std::cout << "Check 1" << '\n';
       advancedToken();
       if(getToken().type == TokenType::TOK_TYPE) {
+        std::cout << "Check 2" << '\n';
         if (getToken().value == "i8" || getToken().value == "i16" || getToken().value == "i32" || getToken().value == "i64" ) return std::make_unique<ExpType>(Type::NUMBER, TokenType::TOK_INTEGER_LITERAL);
         else if(getToken().value == "f16" || getToken().value == "f32" || getToken().value == "f64") return std::make_unique<ExpType>(Type::NUMBER, TokenType::TOK_FLOAT_LITERAL);
         else if(getToken().value == "string") return std::make_unique<ExpType>(Type::STRING,TokenType::TOK_STRING_LITERAL);
         else if(getToken().value == "bool") return std::make_unique<ExpType>(Type::NUMBER, TokenType::TOK_BOOL_LITERAL);
-        else throw std::runtime_error("Expected 'Type' statement");
-      }
+       
+      } else throw std::runtime_error("Expected 'Type' statement");
     } else {
       throw std::runtime_error("Expected ':' statement");
     } 
+    std::cout << "Check 3" << '\n';
     return nullptr;
   }
 

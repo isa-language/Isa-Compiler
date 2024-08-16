@@ -3,12 +3,16 @@
 //#include "parser/ast.hpp"
 #include "src/token.hpp"
 #include "src/parser.hpp"
+#include "src/parser_ast.hpp"
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <sstream>
+
+#define DEBUG 1
+
 
 std::string fileopen(const std::string& filename) {
     std::fstream fs(filename, std::fstream::in);
@@ -23,7 +27,13 @@ std::string fileopen(const std::string& filename) {
 
 
 int main(int argc, char **argv) {
+#if DEBUG
+    std::string code = "let:i32";
+    Lexer lexer(code);
+    IsaParser parser(lexer.tokenize());
+    parser.parserProgram();
 
+#else
     /* Exemplo code */
     std::string codes = " ";
     if(argc > 1) {
@@ -51,7 +61,7 @@ int main(int argc, char **argv) {
      * */
     IsaLLVM isa;
     isa.exec(tokens);
-    
+    #endif
 
 
     return 0;
