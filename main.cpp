@@ -5,40 +5,34 @@
 #include "src/parser.hpp"
 #include "src/parser_ast.hpp"
 #include <iostream>
-#include <stdexcept>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
+#include "nametoken.hpp"
+#include "src/file.hpp"
 
-#define DEBUG 1
+/* alterar valor no modo de compilação! */
+// #define DEBUG 1 // cmake -DENABLE_DEBUG=ON .. ou OFF 
 
-
-std::string fileopen(const std::string& filename) {
-    std::fstream fs(filename, std::fstream::in);
-    std::stringstream ss;
-    if(!fs.is_open()) {
-        throw std::runtime_error("Não foi possivel abrir o arquivo! " + filename);
-    }
-    ss << fs.rdbuf();
-    fs.close();
-    return ss.str();
-}
 
 
 int main(int argc, char **argv) {
 #if DEBUG
-    std::string code = "let:i32";
-    Lexer lexer(code);
-    IsaParser parser(lexer.tokenize());
+    std::string codes = R"(let:i32 test = 4;
+    let:i32 num = 10
+    let: i32 num = 2;
+)";
+    std::vector<std::string> err = splitByErr(codes);
+    Lexer lexer(codes);
+    IsaParser parser(lexer.tokenize(), err);
     parser.parserProgram();
 
 #else
     /* Exemplo code */
-    std::string codes = " ";
+    std::string codes {"let:i32 num = 10;"};
     if(argc > 1) {
         codes = fileopen(std::string(argv[1]));
     }
+    
     // std::fstream open(); 
     
     /**
@@ -46,12 +40,11 @@ int main(int argc, char **argv) {
     * Lexer generetor.
     *
     */
-    
     Lexer lexer(codes);
     auto tokens = lexer.tokenize();
 
     for (const auto& token : tokens) {
-        std::cout << "Token(" << token.type << ", \"" << token.value << "\", " << token.line << ", " << token.column << ")\n";
+        std::cout << "Token(" << tokenStrings[token.type] << ", \"" << token.value << "\", " << token.line << ", " << token.column << ")\n";
     }
 
     /**

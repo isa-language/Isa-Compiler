@@ -15,6 +15,15 @@
 #include <string>
 #include <vector>
 
+
+
+class ASTNode {
+  public:
+    virtual ~ASTNode() = default;
+    // virtual llvm::Value* codegen() = 0;
+
+};
+
 enum class Type {
   NUMBER,
   STRING,
@@ -24,15 +33,9 @@ enum class Type {
 
 struct ExpType {
   Type type;
-  TokenType token;
-  ExpType(Type type, TokenType token) : type{type}, token{token} {}
-};
-
-class ASTNode {
-  public:
-    virtual ~ASTNode() = default;
-    virtual llvm::Value* codegen() = 0;
-
+  Token token;
+  ~ExpType() = default;
+  ExpType(Type type, Token token) : type(type), token(token) {}
 };
 
 using ASTNodePtr = std::unique_ptr<ASTNode>;
@@ -52,39 +55,46 @@ class Program : public ASTNode {
 };
 
 /* ^ isso nao esta bom! */
-
-
 class IdentifierExprAST : public ASTNode {
 public:
-  std::unique_ptr<Token> type;
+  std::string value;
 
-  IdentifierExprAST(std::unique_ptr<Token> type) : type(std::move(type)) {}
-  llvm::Value *codegen() override;
+  IdentifierExprAST(std::string value) : value(value) {}
+  //llvm::Value *codegen() override;
+  
 };
 
+class ExprAST : public ASTNode {
+  public:
+  std::string value;
+  ExprAST( std::string value ) : value(value) {}
+  //llvm::Value *codegen() override;
+};
+
+
 class VariableExpAST : public ASTNode {
+public:
   //std::string name;
   std::unique_ptr<ExpType> type;
   std::unique_ptr<IdentifierExprAST> identifier;
-  std::unique_ptr<ASTNode> expression; 
+  // std::unique_ptr<ExpType> expression; 
 
 
 
-  VariableExpAST(std::unique_ptr<ExpType> type, std::unique_ptr<IdentifierExprAST> identifier, std::unique_ptr<ASTNode> expression) :
-                                        type(std::move(type)),
-                                        identifier(std::move(identifier)), 
-                                        expression(std::move(expression)) {}
+  VariableExpAST(std::unique_ptr<ExpType> type, std::unique_ptr<IdentifierExprAST> identifier) 
+    : type(std::move(type)), identifier(std::move(identifier)) {}
 
-  llvm::Value *codegen() override;
+  //llvm::Value *codegen() override;
 };
 
 class BinaryOpExpAST : public ASTNode {
+public:
   std::unique_ptr<Token> op;
   ASTNodePtr lhs, rhs;
 
   BinaryOpExpAST( std::unique_ptr<Token> op, ASTNodePtr lhs, ASTNodePtr rhs) : op{std::move(op)}, lhs{std::move(lhs)}, rhs{std::move(rhs)} {}
 
-  llvm::Value *codegen() override;
+  //llvm::Value *codegen() override;
 };
 
 

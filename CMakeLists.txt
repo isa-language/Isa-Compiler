@@ -5,7 +5,16 @@ find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
-add_executable(isa main.cpp ./src/lexer.cpp)
+option(ENABLE_DEBUG "Enable debug mode" OFF)
+
+if(ENABLE_DEBUG)
+    add_compile_definitions(DEBUG=1)
+else()
+    add_compile_definitions(DEBUG=0)
+endif()
+
+
+add_executable(isa main.cpp ./src/lexer.cpp ./src/err.cpp)
 target_link_libraries(isa LLVM)
 
 # clang++ -S -emit-llvm ex.cpp -o ex.ll

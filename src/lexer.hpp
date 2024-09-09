@@ -3,9 +3,9 @@
  * IsaLLVMCompilerLEXER
  *
  **/
+#pragma once
 #ifndef isaLEXER
 #define isaLEXER
-#pragma once
 
 #include <vector>
 #include <string>

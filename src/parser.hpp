@@ -1,6 +1,7 @@
 /**
  * Isa to compiler parser in code LLVM.
  * */
+#pragma once 
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
 /* includes header LLVM */
@@ -21,7 +22,6 @@
 /* includes files project */
 // #include "lexer.hpp"
 #include "token.hpp"
-#pragma once 
 
 class IsaLLVM {
   public:
