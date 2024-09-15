@@ -1,1 +1,3 @@
-let: i32 num = 10;
+let:i32 test = 10;
+let:i16 num = 30;
+let:i64 num2 = 100;

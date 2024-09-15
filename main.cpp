@@ -9,30 +9,35 @@
 #include <vector>
 #include "nametoken.hpp"
 #include "src/file.hpp"
+#include "flags.hpp"
 
 /* alterar valor no modo de compilação! */
-// #define DEBUG 1 // cmake -DENABLE_DEBUG=ON .. ou OFF 
+// #define DEBUG 0 // cmake -DENABLE_DEBUG=ON .. ou OFF 
 
 
 
 int main(int argc, char **argv) {
 #if DEBUG
-    std::string codes = R"(let:i32 test = 4;
-    let:i32 num = 10
-    let: i32 num = 2;
+    std::string codes = R"(let:i32 test = 1000;
+        let:i32 num = 22;
 )";
+    if(argc > 1) {
+        codes = fileopen(std::string(argv[1]));
+    }
     std::vector<std::string> err = splitByErr(codes);
     Lexer lexer(codes);
     IsaParser parser(lexer.tokenize(), err);
     parser.parserProgram();
-
+    IsaLLVM isa;
+    isa.exec(std::move(parser.programa->program));
 #else
+
+    
     /* Exemplo code */
     std::string codes {"let:i32 num = 10;"};
     if(argc > 1) {
         codes = fileopen(std::string(argv[1]));
     }
-    
     // std::fstream open(); 
     
     /**
@@ -52,8 +57,8 @@ int main(int argc, char **argv) {
      * implemented instance Compiler 
      * O methodo exec receberar um vector de tokens para o parser AST 
      * */
-    IsaLLVM isa;
-    isa.exec(tokens);
+    //IsaLLVM isa;
+    //isa.exec(tokens);
     #endif
 
 

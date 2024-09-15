@@ -2,6 +2,7 @@
  * Isa to compiler parser in code LLVM.
  * */
 #pragma once 
+#include <algorithm>
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
 /* includes header LLVM */
@@ -22,6 +23,7 @@
 /* includes files project */
 // #include "lexer.hpp"
 #include "token.hpp"
+#include "ast.hpp"
 
 class IsaLLVM {
   public:
@@ -33,7 +35,7 @@ class IsaLLVM {
   /**
    * Execute program
    **/
-  void exec(const std::vector<Token>& program) {
+  void exec(std::vector<std::unique_ptr<ASTNode>> program) {
   /**
     * 1 parser compiler AST
     *
@@ -43,24 +45,36 @@ class IsaLLVM {
     **/
 
     // 2 -> codegen 
-    compiler();
+    compiler(std::move(program));
     module->print(llvm::outs(), nullptr);
     // * salve module IR to file 
     salveModuleFile("out.ll");
   }
 
-  void exec(const std::vector<Token>& program, const std::string& filename) {
+  void exec(std::vector<std::unique_ptr<ASTNode>> program, const std::string& filename) {
+    compiler(std::move(program));
+    module->print(llvm::outs(), nullptr);
     salveModuleFile(filename);
   }
  
   private:
   
   /* compiler run */
-  void compiler(/* AST */ ) {
+  void compiler(std::vector<std::unique_ptr<ASTNode>> program) {
     // create function main ( entry ) -> isaLLVMCompiler 
     llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
-    auto res = codegen();
+    //auto res = codegen();
     // auto i32Result = builder->CreateIntCast(res, builder->getInt32Ty(), true );
+    for(const auto &a: program) {
+      if(a.get() != nullptr) {
+        auto var = dynamic_cast<VariableExpAST*>(a.get());
+        var->codegen(*builder,*context); 
+      }
+     
+    }
+    // auto var = dynamic_cast<VariableExpAST*>(program[0].get());
+   
+
     builder->CreateRet(builder->getInt32(0));
     
   }

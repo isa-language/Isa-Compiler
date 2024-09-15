@@ -14,7 +14,7 @@ else()
 endif()
 
 
-add_executable(isa main.cpp ./src/lexer.cpp ./src/err.cpp)
+add_executable(isa main.cpp ./src/lexer.cpp ./src/err.cpp ./src/variable_declaration.cpp)
 target_link_libraries(isa LLVM)
 
 # clang++ -S -emit-llvm ex.cpp -o ex.ll

@@ -6,7 +6,7 @@
 #include <vector>
 #ifndef IsaLLVM_FLAGS_COMPILER
 #define IsaLLVM_FLAGS_COMPILER
-#define EXECUTE_RUN_TIME 0
+#define NAME_FILE 0
 #define GENERETE_BYTECODE 1
 
 struct Flagsmodel{
@@ -26,7 +26,7 @@ static std::vector<bool> flags(int argc, char **argv) {
     false
   };
   std::map<std::string, Flagsmodel> flags_total {
-    {"-r", {true, EXECUTE_RUN_TIME}},
+    {"-o", {true, NAME_FILE}},
     {"--bytecode", {true, GENERETE_BYTECODE}}
   };
 
