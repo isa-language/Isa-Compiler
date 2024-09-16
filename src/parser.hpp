@@ -68,7 +68,7 @@ class IsaLLVM {
     for(const auto &a: program) {
       if(a.get() != nullptr) {
         auto var = dynamic_cast<VariableExpAST*>(a.get());
-        var->codegen(*builder,*context); 
+        var->codegen(*builder,*context, *module); 
       }
      
     }

@@ -63,8 +63,8 @@ public:
       } else if(getToken().type == TokenType::TOK_LET) {
          //parserIdentVarDeclType();
         auto let = VariableDeclarator();
-        // programa->addDeclaration(std::move(let));
-        //std::cout << "variavel declarete " << let->identifier->value << " type " << let->type->token.value << '\n';
+        // programa->addDeclaration(std::move(let));type->token.value
+
         if(let != nullptr) programa->addDeclaration(std::move(let));
         //advancedToken();
       }
@@ -72,14 +72,13 @@ public:
     }
     
   }
+
+   std::unique_ptr<ArrayDeclarationNode> arrayDeclarationNode();
+
   std::unique_ptr<ExpType> parserIdentVarDeclType();
   std::unique_ptr<IdentifierExprAST> IdentifierDecl();
   std::unique_ptr<VariableExpAST> VariableDeclarator();
 
-/*
-  std::unique_ptr<FunctionDeclaration> functionDeclaration() {
-
-  } */
 };
 
 

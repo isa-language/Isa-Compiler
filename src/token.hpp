@@ -25,6 +25,7 @@ enum TokenType {
     TOK_BOOL_LITERAL,
     TOK_STRING_LITERAL,
     TOK_IDENTIFIER,
+    TOK_ARRAY,
 
     // Operators and Delimiters
     TOK_ASSIGN,  // '='

@@ -69,7 +69,7 @@ Token Lexer::handleIdentifierOrKeyword() {
         {"i8", TOK_TYPE}, {"i16", TOK_TYPE}, {"i32", TOK_TYPE}, {"i64", TOK_TYPE},
         {"u8", TOK_TYPE}, {"u16", TOK_TYPE}, {"u32", TOK_TYPE}, {"u64", TOK_TYPE},
         {"f8", TOK_TYPE}, {"f16", TOK_TYPE}, {"f32", TOK_TYPE}, {"f64", TOK_TYPE},
-        {"bool", TOK_TYPE}, {"string", TOK_TYPE}
+        {"bool", TOK_TYPE}, {"string", TOK_TYPE}, {"array", TOK_TYPE}
     };
 
     it = types.find(value);

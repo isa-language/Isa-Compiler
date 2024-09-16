@@ -4,6 +4,7 @@
 #pragma once 
 #include <cctype>
 #include <charconv>
+#include <cstddef>
 #include <llvm/IR/LLVMContext.h>
 #include <utility>
 #ifndef IsaLLVM_AST
@@ -22,7 +23,6 @@
 #include <vector>
 
 
-
 class ASTNode {
   public:
     virtual ~ASTNode() = default;
@@ -35,7 +35,8 @@ enum class Type {
   STRING,
   SYMBOL,
   LIST,
-  FUNCTION
+  FUNCTION,
+  ARRAY
 };
 
 struct ExpType {
@@ -80,20 +81,36 @@ class ExprAST : public ASTNode {
   //llvm::Value *codegen() override;
 };
 
+class ArrayDeclarationNode : public ASTNode {
+  public:
+  std::string name;
+  size_t size;
+  std::unique_ptr<ExpType> type;
+  std::vector<std::unique_ptr<IdentifierExprAST>> elements;
+  ArrayDeclarationNode(std::string &name,size_t size,std::unique_ptr<ExpType> type,std::vector<std::unique_ptr<IdentifierExprAST>> elements) : name(name), size(size), type(std::move(type)), elements(std::move(elements)) {} 
+  ArrayDeclarationNode(std::string &name,std::unique_ptr<ExpType> type,std::vector<std::unique_ptr<IdentifierExprAST>> elements) : size(1), type(std::move(type)), elements(std::move(elements)), name(name) {} 
+  ArrayDeclarationNode(std::string &name,std::unique_ptr<ExpType> type) : size(1), type(std::move(type)), name(name) {} 
+
+};
 
 class VariableExpAST : public ASTNode {
 public:
   std::string name;
   std::unique_ptr<ExpType> type;
   std::unique_ptr<IdentifierExprAST> identifier;
+  std::unique_ptr<ArrayDeclarationNode> array;
   // std::unique_ptr<ExpType> expression; 
 
 
 
-  VariableExpAST(std::string& name, std::unique_ptr<ExpType> type, std::unique_ptr<IdentifierExprAST> identifier) 
+  VariableExpAST(std::string name, std::unique_ptr<ExpType> type, std::unique_ptr<IdentifierExprAST> identifier) 
     : type(std::move(type)), identifier(std::move(identifier)), name(name) {}
 
-  llvm::Value *codegen(llvm::IRBuilder<> &builder, llvm::LLVMContext &context) {
+  VariableExpAST(std::string name, std::unique_ptr<ExpType> type, std::unique_ptr<ArrayDeclarationNode> array) 
+    : type(std::move(type)),  name(name), array(std::move(array)) {}
+  
+
+  llvm::Value *codegen(llvm::IRBuilder<> &builder, llvm::LLVMContext &context, llvm::Module& module) {
    llvm::AllocaInst* variable = nullptr;
     if (type->token.value == "i8") {
       llvm::Type* int8Type = llvm::Type::getInt8Ty(context);
@@ -123,6 +140,69 @@ public:
       if (initialValue != nullptr) {
         builder.CreateStore(initialValue, variable);
       }
+    } else if(type->token.value == "u8") {
+      llvm::Type* int8Type = llvm::Type::getInt8Ty(context);
+      variable = builder.CreateAlloca(int8Type, nullptr, name);
+      llvm::Value* initialValue = llvm::ConstantInt::get(int8Type, std::stoi(identifier->value), false);
+      if (initialValue != nullptr) {
+        builder.CreateStore(initialValue, variable);
+      }
+    } else if(type->token.value == "u16") {
+      llvm::Type* int16Type = llvm::Type::getInt16Ty(context);
+      variable = builder.CreateAlloca(int16Type, nullptr, name);
+      llvm::Value* initialValue = llvm::ConstantInt::get(int16Type, std::stoi(identifier->value), false);
+      if (initialValue != nullptr) {
+        builder.CreateStore(initialValue, variable);
+      }
+    } else if (type->token.value == "u32") {
+      llvm::Type* int32Type = llvm::Type::getInt32Ty(context);
+      variable = builder.CreateAlloca(int32Type, nullptr, name);
+      llvm::Value* initialValue = llvm::ConstantInt::get(int32Type, std::stoi(identifier->value), false);
+      if (initialValue != nullptr) {
+        builder.CreateStore(initialValue, variable);
+      }
+    } else if (type->token.value == "u64") {
+      llvm::Type* int64Type = llvm::Type::getInt64Ty(context);
+      variable = builder.CreateAlloca(int64Type, nullptr, name);
+      llvm::Value* initialValue = llvm::ConstantInt::get(int64Type, std::stoi(identifier->value), false);
+      if (initialValue != nullptr) {
+        builder.CreateStore(initialValue, variable);
+      }
+    } else if(type->token.value == "f16") {
+      llvm::Type *floatType = llvm::Type::getHalfTy(context);
+      variable = builder.CreateAlloca(floatType, nullptr, name);
+      llvm::AllocaInst *alloca = builder.CreateAlloca(floatType, nullptr, name);
+      llvm::Value *initialValue = llvm::ConstantFP::get(floatType, std::stof(identifier->value));
+      if (initialValue != nullptr) {
+        builder.CreateStore(initialValue, variable);
+      }
+    } else if(type->token.value == "f32") {
+      llvm::Type *floatType = llvm::Type::getFloatTy(context);
+      variable = builder.CreateAlloca(floatType, nullptr, name);
+      llvm::AllocaInst *alloca = builder.CreateAlloca(floatType, nullptr, name);
+      llvm::Value *initialValue = llvm::ConstantFP::get(floatType, std::stof(identifier->value));
+      if (initialValue != nullptr) {
+        builder.CreateStore(initialValue, variable);
+      }
+    } else if(type->token.value == "f64") {
+      llvm::Type *floatType = llvm::Type::getDoubleTy(context);
+      variable = builder.CreateAlloca(floatType, nullptr, name);
+      llvm::AllocaInst *alloca = builder.CreateAlloca(floatType, nullptr, name);
+      llvm::Value *initialValue = llvm::ConstantFP::get(floatType, std::stod(identifier->value));
+      if (initialValue != nullptr) {
+        builder.CreateStore(initialValue, variable);
+      }
+    } else if(type->token.value == "string") {
+      llvm::Type *charPtrType = llvm::Type::getInt8PtrTy(context);
+      llvm::Constant *stringValue = llvm::ConstantDataArray::getString(context, identifier->value, true);
+      llvm::GlobalVariable *globalString = new llvm::GlobalVariable(
+        module, stringValue->getType(), true, llvm::GlobalValue::PrivateLinkage, stringValue, name);
+      llvm::Constant *zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0);
+      llvm::Value *stringPtr = builder.CreateInBoundsGEP(globalString->getValueType(), globalString, {zero, zero}, name);
+    } else if(type->token.value == "array") {
+      llvm::ArrayType* arrayType = llvm::ArrayType::get(llvm::Type::getInt32Ty(context), array->size);
+      llvm::Value* arrayAlloca = builder.CreateAlloca(arrayType, nullptr, name);
+      return arrayAlloca;
     }
     
     
@@ -131,6 +211,7 @@ public:
     return variable;
 };
 };
+
 
 
 class BinaryOpExpAST : public ASTNode {
