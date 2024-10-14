@@ -1,5 +1,4 @@
 #include "src/lexer.hpp"
-//#include "parser/parser.hpp"
 //#include "parser/ast.hpp"
 #include "src/token.hpp"
 #include "src/parser.hpp"
@@ -17,6 +16,7 @@
 
 int main(int argc, char **argv) {
 #if DEBUG
+    /*
     std::string codes = R"(let:i32 test = 1000;
         let:i32 num = 22;
 )";
@@ -25,7 +25,9 @@ int main(int argc, char **argv) {
     }
     std::vector<std::string> err = splitByErr(codes);
     Lexer lexer(codes);
+    */
     IsaLLVM isa;
+    isa.exec();
     // isa.exec(std::move(parser.programa->program));
 #else
 

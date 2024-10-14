@@ -13,8 +13,7 @@ else()
     add_compile_definitions(DEBUG=0)
 endif()
 
-
-add_executable(isa main.cpp ./src/lexer.cpp ./src/err.cpp ./src/parser.cpp)
+add_executable(isa main.cpp ./src/lexer.cpp ./src/err.cpp ./src/parser.cpp ./src/ast.cpp)
 target_link_libraries(isa LLVM)
 
 # clang++ -S -emit-llvm ex.cpp -o ex.ll

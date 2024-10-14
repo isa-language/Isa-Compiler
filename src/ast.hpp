@@ -1,13 +1,62 @@
 #pragma once 
+#include <algorithm>
+#ifndef IsaLLVM_AST
+#define IsaLLVM_AST
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
 #include <iostream>
 #include <memory>
 #include <vector>
 #include <string>
 #include <llvm/IR/Value.h>
-#include "parser.hpp"
 
 
-class LLVMCodeGenVisitor;
+
+class ASTNode;
+class VariableDeclarationNode;
+class IntegerLiteralNode;
+class StructDeclarationNode;
+class FunctionNode;
+class BinaryExpressionNode;
+class ReturnNode;
+class IfNode;
+class WhileNode;
+class ForNode;
+
+class Visitor {
+  virtual llvm::Value* visit(VariableDeclarationNode &node) = 0;
+  virtual llvm::Value* visit(IntegerLiteralNode &node) = 0;
+  virtual llvm::Value* visit(StructDeclarationNode &node) = 0;
+  virtual llvm::Value* visit(FunctionNode &node) = 0;
+  virtual llvm::Value* visit(BinaryExpressionNode &node) = 0;
+  virtual llvm::Value* visit(ReturnNode &node) = 0;
+  virtual llvm::Value* visit(IfNode &node) = 0;
+  virtual llvm::Value* visit(WhileNode &node) = 0;
+  virtual llvm::Value* visit(ForNode &node) = 0;
+};
+
+class LLVMCodeGenVisitor : public Visitor {
+public:
+    llvm::IRBuilder<> *builder;
+    llvm::LLVMContext *context;
+    llvm::Module *module;
+
+  LLVMCodeGenVisitor(llvm::IRBuilder<> *builder, llvm::LLVMContext *context, llvm::Module *module) : builder(builder), context(context), module(module) {}
+
+  llvm::Value* visit(VariableDeclarationNode &node) override;
+  llvm::Value* visit(IntegerLiteralNode &node) override;
+  llvm::Value* visit(StructDeclarationNode &node) override;
+  llvm::Value* visit(FunctionNode &node) override;
+  llvm::Value* visit(BinaryExpressionNode &node) override;
+  llvm::Value* visit(ReturnNode &node) override;
+  llvm::Value* visit(IfNode &node) override;
+  llvm::Value* visit(WhileNode &node) override;
+  llvm::Value* visit(ForNode &node) override;
+  llvm::Type* getLLVMType(const std::string &name);
+};
+
 
 class ASTNode {
 public:
@@ -15,6 +64,17 @@ public:
     virtual llvm::Value* accept(class LLVMCodeGenVisitor &visitor) = 0;
 };
 
+class IntegerLiteralNode : public ASTNode {
+public:
+    int value;
+
+IntegerLiteralNode(int val) : value(val) {}
+
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override {
+        return visitor.visit(*this);
+    }
+    
+};
 
 class VariableDeclarationNode : public ASTNode {
 public:
@@ -25,8 +85,13 @@ public:
     VariableDeclarationNode(const std::string &name, const std::string &type, std::unique_ptr<ASTNode> init)
         : varName(name), varType(type), initializer(std::move(init)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override {
+        return visitor.visit(*this);
+    }
+
+
 };
+
 
 
 class StructDeclarationNode : public ASTNode {
@@ -117,3 +182,6 @@ public:
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
 
+
+
+#endif // !IsaLLVM_AST

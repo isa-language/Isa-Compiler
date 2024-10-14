@@ -2,14 +2,15 @@
  * Isa to compiler parser in code LLVM.
  * */
 #pragma once 
-#include <algorithm>
-#include <llvm/IR/Value.h>
+
+#include <iostream>
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
 /* includes header LLVM */
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Value.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -26,38 +27,6 @@
 #include "ast.hpp"
 
 
-class Visitor {
-  virtual llvm::Value* visit(VariableDeclarationNode &node) = 0;
-  virtual llvm::Value* visit(StructDeclarationNode &node) = 0;
-  virtual llvm::Value* visit(FunctionNode &node) = 0;
-  virtual llvm::Value* visit(BinaryExpressionNode &node) = 0;
-  virtual llvm::Value* visit(ReturnNode &node) = 0;
-  virtual llvm::Value* visit(IfNode &node) = 0;
-  virtual llvm::Value* visit(WhileNode &node) = 0;
-  virtual llvm::Value* visit(ForNode &node) = 0;
-};
-
-class LLVMCodeGenVisitor : public Visitor{
-public:
-  llvm::IRBuilder<> &builder;
-  llvm::LLVMContext &context;
-  llvm::Module &module;
-
-  LLVMCodeGenVisitor(llvm::IRBuilder<> &builder, llvm::LLVMContext &context, llvm::Module &module) : builder(builder), context(context), module(module) {}
-
-  llvm::Value* visit(VariableDeclarationNode &node) override;
-  llvm::Value* visit(StructDeclarationNode &node) override;
-  llvm::Value* visit(FunctionNode &node) override;
-  llvm::Value* visit(BinaryExpressionNode &node) override;
-  llvm::Value* visit(ReturnNode &node) override;
-  llvm::Value* visit(IfNode &node) override;
-  llvm::Value* visit(WhileNode &node) override;
-  llvm::Value* visit(ForNode &node) override;
-  llvm::Type* getLLVMType(const std::string &name);
-};
-
-
-
 
 class IsaLLVM {
   public:
@@ -69,31 +38,53 @@ class IsaLLVM {
   /**
    * Execute program
    **/
+  /*
   void exec(std::vector<std::unique_ptr<ASTNode>> program) {
-  /**
+  **
     * 1 parser compiler AST
     *
     * 2 codegen compiler LLVM
     *
     * compiler(AST)
-    **/
+    **
 
     // 2 -> codegen 
-    compiler(std::move(program));
+    compiler();
     module->print(llvm::outs(), nullptr);
     // * salve module IR to file 
     salveModuleFile("out.ll");
   }
-
+  */
+  llvm::IRBuilder<>& getBuilder() {
+    return *builder;
+  }
+  void exec() {
+    compiler();
+    module->print(llvm::outs(), nullptr);
+    salveModuleFile("out.ll");
+  }
+/*
   void exec(std::vector<std::unique_ptr<ASTNode>> program, const std::string& filename) {
-    compiler(std::move(program));
+    //compiler(std::move(program));
     module->print(llvm::outs(), nullptr);
     salveModuleFile(filename);
   }
- 
+ */
   private:
   
   /* compiler run */
+
+  void compiler() {
+
+    llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
+    LLVMCodeGenVisitor visitor(&getBuilder(),context.get(),module.get());
+    std::unique_ptr<VariableDeclarationNode> variable = std::make_unique<VariableDeclarationNode>("num","i32",std::make_unique<IntegerLiteralNode>(10));
+    variable->accept(visitor);
+    std::cout << "Test" << '\n';
+    builder->CreateRet(builder->getInt32(0));
+  
+  }
+
   void compiler(std::vector<std::unique_ptr<ASTNode>> program) {
     // create function main ( entry ) -> isaLLVMCompiler 
     llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
