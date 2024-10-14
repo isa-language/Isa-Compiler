@@ -3,7 +3,6 @@
 //#include "parser/ast.hpp"
 #include "src/token.hpp"
 #include "src/parser.hpp"
-#include "src/parser_ast.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -26,10 +25,8 @@ int main(int argc, char **argv) {
     }
     std::vector<std::string> err = splitByErr(codes);
     Lexer lexer(codes);
-    IsaParser parser(lexer.tokenize(), err);
-    parser.parserProgram();
     IsaLLVM isa;
-    isa.exec(std::move(parser.programa->program));
+    // isa.exec(std::move(parser.programa->program));
 #else
 
     

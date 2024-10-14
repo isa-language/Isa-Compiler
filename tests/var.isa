@@ -1,2 +1,2 @@
-let:i8 numero = 10;
+let: i8 numero = 10;
 let:string nome = "Guilherme";

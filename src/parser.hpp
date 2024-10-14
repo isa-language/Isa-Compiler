@@ -3,6 +3,7 @@
  * */
 #pragma once 
 #include <algorithm>
+#include <llvm/IR/Value.h>
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
 /* includes header LLVM */
@@ -15,15 +16,48 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/IR/Type.h>
 /* includes libs c */
 #include <memory>
 #include <string>
 #include <system_error>
 #include <vector>
 /* includes files project */
-// #include "lexer.hpp"
-#include "token.hpp"
 #include "ast.hpp"
+
+
+class Visitor {
+  virtual llvm::Value* visit(VariableDeclarationNode &node) = 0;
+  virtual llvm::Value* visit(StructDeclarationNode &node) = 0;
+  virtual llvm::Value* visit(FunctionNode &node) = 0;
+  virtual llvm::Value* visit(BinaryExpressionNode &node) = 0;
+  virtual llvm::Value* visit(ReturnNode &node) = 0;
+  virtual llvm::Value* visit(IfNode &node) = 0;
+  virtual llvm::Value* visit(WhileNode &node) = 0;
+  virtual llvm::Value* visit(ForNode &node) = 0;
+};
+
+class LLVMCodeGenVisitor : public Visitor{
+public:
+  llvm::IRBuilder<> &builder;
+  llvm::LLVMContext &context;
+  llvm::Module &module;
+
+  LLVMCodeGenVisitor(llvm::IRBuilder<> &builder, llvm::LLVMContext &context, llvm::Module &module) : builder(builder), context(context), module(module) {}
+
+  llvm::Value* visit(VariableDeclarationNode &node) override;
+  llvm::Value* visit(StructDeclarationNode &node) override;
+  llvm::Value* visit(FunctionNode &node) override;
+  llvm::Value* visit(BinaryExpressionNode &node) override;
+  llvm::Value* visit(ReturnNode &node) override;
+  llvm::Value* visit(IfNode &node) override;
+  llvm::Value* visit(WhileNode &node) override;
+  llvm::Value* visit(ForNode &node) override;
+  llvm::Type* getLLVMType(const std::string &name);
+};
+
+
+
 
 class IsaLLVM {
   public:
@@ -67,8 +101,8 @@ class IsaLLVM {
     // auto i32Result = builder->CreateIntCast(res, builder->getInt32Ty(), true );
     for(const auto &a: program) {
       if(a.get() != nullptr) {
-        auto var = dynamic_cast<VariableExpAST*>(a.get());
-        var->codegen(*builder,*context, *module); 
+        //auto var = dynamic_cast<VariableExpAST*>(a.get());
+        //var->codegen(*builder,*context, *module); 
       }
      
     }
