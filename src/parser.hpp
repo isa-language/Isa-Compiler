@@ -76,12 +76,24 @@ class IsaLLVM {
 
   void compiler() {
 
-    llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
+    //llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
     LLVMCodeGenVisitor visitor(&getBuilder(),context.get(),module.get());
-    std::unique_ptr<VariableDeclarationNode> variable = std::make_unique<VariableDeclarationNode>("num","i32",std::make_unique<IntegerLiteralNode>(10));
-    variable->accept(visitor);
-    std::cout << "Test" << '\n';
-    builder->CreateRet(builder->getInt32(0));
+    std::unique_ptr<FunctionNode> function; 
+    std::vector<std::unique_ptr<VariableDeclarationNode>> functionParams;
+    functionParams.push_back(std::make_unique<VariableDeclarationNode>("argv", "string"));
+    functionParams.push_back(std::make_unique<VariableDeclarationNode>("argc", "i32"));
+    functionParams.push_back(std::make_unique<VariableDeclarationNode>("node", "i8"));
+    functionParams.push_back(std::make_unique<VariableDeclarationNode>("exec", "i16"));
+
+
+    std::vector<std::unique_ptr<ASTNode>> functionBody;
+    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num","i32",std::make_unique<IntegerLiteralNode>("i32",10)));
+    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num2","i32",std::make_unique<IntegerLiteralNode>("i16",20)));
+    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num3","i32",std::make_unique<IntegerLiteralNode>("i64",152434)));
+    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num4","i32",std::make_unique<IntegerLiteralNode>("i32",15)));
+    function = std::make_unique<FunctionNode>("main","i32",std::move(functionParams), std::move(functionBody));
+    function->accept(visitor);
+
   
   }
 

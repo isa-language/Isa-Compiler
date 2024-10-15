@@ -54,7 +54,8 @@ public:
   llvm::Value* visit(IfNode &node) override;
   llvm::Value* visit(WhileNode &node) override;
   llvm::Value* visit(ForNode &node) override;
-  llvm::Type* getLLVMType(const std::string &name);
+  llvm::Type* getLLVMType(const std::string &type);
+  llvm::Type* getLLVMTypeFromASTType(const std::string &type);
 };
 
 
@@ -66,14 +67,12 @@ public:
 
 class IntegerLiteralNode : public ASTNode {
 public:
+    std::string type;
     int value;
 
-IntegerLiteralNode(int val) : value(val) {}
+IntegerLiteralNode(const std::string &type, int val) : type(type),value(val) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override {
-        return visitor.visit(*this);
-    }
-    
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
 
 class VariableDeclarationNode : public ASTNode {
@@ -84,12 +83,10 @@ public:
 
     VariableDeclarationNode(const std::string &name, const std::string &type, std::unique_ptr<ASTNode> init)
         : varName(name), varType(type), initializer(std::move(init)) {}
+    VariableDeclarationNode(const std::string &name, const std::string &type)
+        : varName(name), varType(type), initializer(nullptr) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override {
-        return visitor.visit(*this);
-    }
-
-
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
 
 
@@ -105,15 +102,19 @@ public:
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
 
-
 class FunctionNode : public ASTNode {
 public:
     std::string functionName;
     std::string returnType;
-    std::vector<std::unique_ptr<ASTNode>> body;
+    std::vector<std::unique_ptr<VariableDeclarationNode>> parameters;
+    std::vector<std::unique_ptr<ASTNode>> functionBody;
 
-    FunctionNode(const std::string &name, const std::string &retType, std::vector<std::unique_ptr<ASTNode>> &&body)
-        : functionName(name), returnType(retType), body(std::move(body)) {}
+    FunctionNode(const std::string &name, const std::string &retType, std::vector<std::unique_ptr<VariableDeclarationNode>> params, 
+                 std::vector<std::unique_ptr<ASTNode>> body)
+        : functionName(name), returnType(retType), parameters(std::move(params)), functionBody(std::move(body)) {}
+
+    FunctionNode(const std::string &name, const std::string &retType)
+        : functionName(name), returnType(retType) {}
 
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
