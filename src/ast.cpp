@@ -1,5 +1,6 @@
 #include "ast.hpp"
 #include "parser.hpp"
+#include <llvm/IR/Value.h>
 
 llvm::Value* VariableDeclarationNode::accept(LLVMCodeGenVisitor &visitor) {
     return visitor.visit(*this);
@@ -36,4 +37,22 @@ llvm::Value* ForNode::accept(LLVMCodeGenVisitor &visitor) {
 llvm::Value* IntegerLiteralNode::accept(LLVMCodeGenVisitor &visitor) {
     return visitor.visit(*this);
 }
+llvm::Value* StructInstantiationNode::accept(LLVMCodeGenVisitor &visitor) {
+        return visitor.visit(*this);
+}
+llvm::Value* VariableReferenceNode::accept(LLVMCodeGenVisitor &visitor) {
+        return visitor.visit(*this);
+}
 
+llvm::Value* ExpressionStatementNode::accept(LLVMCodeGenVisitor &visitor) {
+        return visitor.visit(*this);
+}
+llvm::Value* FunctionCallNode::accept(LLVMCodeGenVisitor &visitor) {
+        return visitor.visit(*this);
+}
+llvm::Value* AssignmentNode::accept(LLVMCodeGenVisitor &visitor) {
+        return visitor.visit(*this);
+}
+llvm::Value* BlockNode::accept(LLVMCodeGenVisitor &visitor) {
+    return visitor.visit(*this);
+}

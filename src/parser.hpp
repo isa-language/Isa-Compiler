@@ -4,6 +4,7 @@
 #pragma once 
 
 #include <iostream>
+#include <utility>
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
 /* includes header LLVM */
@@ -73,42 +74,67 @@ class IsaLLVM {
   private:
   
   /* compiler run */
-
-  void compiler() {
-
-    //llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
-    LLVMCodeGenVisitor visitor(&getBuilder(),context.get(),module.get());
+void compiler() {
+    LLVMCodeGenVisitor visitor(&getBuilder(), context.get(), module.get());
+    std::vector<std::unique_ptr<ASTNode>> program;
     std::unique_ptr<FunctionNode> function; 
     std::vector<std::unique_ptr<VariableDeclarationNode>> functionParams;
-    functionParams.push_back(std::make_unique<VariableDeclarationNode>("argv", "string"));
-    functionParams.push_back(std::make_unique<VariableDeclarationNode>("argc", "i32"));
-    functionParams.push_back(std::make_unique<VariableDeclarationNode>("node", "i8"));
-    functionParams.push_back(std::make_unique<VariableDeclarationNode>("exec", "i16"));
 
+    functionParams.push_back(std::make_unique<VariableDeclarationNode>("argc", "i32"));
+    functionParams.push_back(std::make_unique<VariableDeclarationNode>("argv", "string"));
 
     std::vector<std::unique_ptr<ASTNode>> functionBody;
-    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num","i32",std::make_unique<IntegerLiteralNode>("i32",10)));
-    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num2","i32",std::make_unique<IntegerLiteralNode>("i16",20)));
-    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num3","i32",std::make_unique<IntegerLiteralNode>("i64",152434)));
-    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num4","i32",std::make_unique<IntegerLiteralNode>("i32",15)));
-    function = std::make_unique<FunctionNode>("main","i32",std::move(functionParams), std::move(functionBody));
-    function->accept(visitor);
 
-  
-  }
+    functionBody.push_back(std::make_unique<VariableDeclarationNode>("num", "i32", std::make_unique<IntegerLiteralNode>("i32", 3000000)));
+    //functionBody.push_back(std::make_unique<VariableDeclarationNode>("num2", "i32", std::make_unique<IntegerLiteralNode>("i32", 20)));
+    //functionBody.push_back(std::make_unique<VariableDeclarationNode>("num3", "i32", std::make_unique<IntegerLiteralNode>("i32", 5)));
+    //functionBody.push_back(std::make_unique<VariableDeclarationNode>("num4", "i32", std::make_unique<IntegerLiteralNode>("i32", 3)));
 
-  void compiler(std::vector<std::unique_ptr<ASTNode>> program) {
-    // create function main ( entry ) -> isaLLVMCompiler 
-    llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
-    //auto res = codegen();
-    // auto i32Result = builder->CreateIntCast(res, builder->getInt32Ty(), true );
-    for(const auto &a: program) {
-      if(a.get() != nullptr) {
-        //auto var = dynamic_cast<VariableExpAST*>(a.get());
-        //var->codegen(*builder,*context, *module); 
-      }
-     
+    functionBody.push_back(std::make_unique<VariableDeclarationNode>("sum", "i32", std::make_unique<IntegerLiteralNode>("i32", 0)));
+
+    auto forInit = std::make_unique<VariableDeclarationNode>("i", "i32", std::make_unique<IntegerLiteralNode>("i32", 0));
+    auto forCondition = std::make_unique<BinaryExpressionNode>(
+        std::make_unique<VariableReferenceNode>("i", "i32"),
+        "<",
+        std::make_unique<IntegerLiteralNode>("i32", 3000000) 
+    );
+    auto forIncrement = std::make_unique<BinaryExpressionNode>(
+        std::make_unique<VariableReferenceNode>("i", "i32"),
+        "+=",
+        std::make_unique<IntegerLiteralNode>("i32", 1)
+    );
+
+    std::vector<std::unique_ptr<ASTNode>> forBody;
+    forBody.push_back(std::make_unique<BinaryExpressionNode>(
+        std::make_unique<VariableReferenceNode>("sum", "i32"),
+        "+",
+        std::make_unique<VariableReferenceNode>("i", "i32")
+    ));
+
+    auto forNode = std::make_unique<ForNode>(
+        std::move(forInit), 
+        std::move(forCondition), 
+        std::move(forIncrement), 
+        std::make_unique<BlockNode>(std::move(forBody))
+    );
+
+    functionBody.push_back(std::move(forNode));
+
+    function = std::make_unique<FunctionNode>("main", "i32", std::move(functionParams), std::move(functionBody));
+    program.push_back(std::move(function));
+
+    for (auto &exec : program) {
+        exec->accept(visitor);
     }
+}
+
+
+
+  void compiler(std::vector<std::unique_ptr<ASTNode>> Program) {
+    llvm::Function *fn = createFunction( "main", llvm::FunctionType::get(builder->getInt32Ty(), false));
+    auto res = codegen();
+    auto i32Result = builder->CreateIntCast(res, builder->getInt32Ty(), true );
+
     // auto var = dynamic_cast<VariableExpAST*>(program[0].get());
    
 
@@ -161,9 +187,8 @@ class IsaLLVM {
   
   llvm::Value *codegen() {
     // return builder->getInt32(0);
-    auto str = builder->CreateGlobalStringPtr("Olá, mundo isa!\n");
+    auto str = builder->CreateGlobalStringPtr("%i\n");
 
-    // call print 
     auto printfn = module->getFunction("printf");
     std::vector<llvm::Value*> args {str};
     return builder->CreateCall(printfn, args);

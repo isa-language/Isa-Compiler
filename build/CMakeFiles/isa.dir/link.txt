@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/isa.dir/main.cpp.o CMakeFiles/isa.dir/src/lexer.cpp.o CMakeFiles/isa.dir/src/err.cpp.o CMakeFiles/isa.dir/src/parser.cpp.o CMakeFiles/isa.dir/src/ast.cpp.o -o isa  /usr/lib/libLLVM-17.so

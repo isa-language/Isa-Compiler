@@ -13,7 +13,7 @@ struct Tipo {
     }
 };
 
-fn main() -> i32 {
+fn main(argc: i32, argv: [string]) -> i32 {
     let: Tipo t = Tipo::new(42, "Exemplo");
     for (let: i8 i = 0; i < 10; i++) {
         println("{}", i);

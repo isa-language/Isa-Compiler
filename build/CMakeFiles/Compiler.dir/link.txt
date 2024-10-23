@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/Compiler.dir/main.cpp.o CMakeFiles/Compiler.dir/src/lexer.cpp.o -o Compiler  /usr/lib/libLLVM-17.so

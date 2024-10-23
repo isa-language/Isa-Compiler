@@ -1,2 +1,8 @@
-let: i8 numero = 10;
-let:string nome = "Guilherme";
+let: i8 valor = 10;
+let: i32 num = 10;
+let: f32 ponto = 0.40;
+let: [i32, 3] vetor = { 10, 5, 3 };
+let: str[10] fixed_str = "Olá, mundo";
+let: string dynamic_str = "Olá, mundo! Isa";
+let: u8 small_number = 255;
+let: u32 large_number = 4294967295;
