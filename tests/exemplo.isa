@@ -1,9 +1,3 @@
-let: i32 num = 10;
-let: f32 ponto = 0.40;
-let: [i32, 3] vetor = { 10, 5, 3 };
-let: str[10] fixed_str = "Hello";
-let: string dynamic_str = "Olá, mundo Isa! 1";
-
 struct Tipo {
     let: i32 value;
     let: string nome;
@@ -13,7 +7,14 @@ struct Tipo {
     }
 };
 
-fn main(argc: i32, argv: [string]) -> i32 {
+
+fn main(argc: i32, argv: [str]) -> i32 {
+    let: i32 num = 10;
+    let: f32 ponto = 0.40;
+    let: [i32, 3] vetor = { 10, 5, 3 };
+    let: str fixed_str = "Hello";
+    let: string dynamic_str = "Olá, mundo Isa! 1";
+
     let: Tipo t = Tipo::new(42, "Exemplo");
     for (let: i8 i = 0; i < 10; i++) {
         println("{}", i);

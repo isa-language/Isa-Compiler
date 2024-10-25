@@ -23,3 +23,4 @@ target_link_libraries(isa LLVM)
 # opt -O3 ex.ll -o ex_op.ll
 # llc ex.ll -o ex.s
 # clang++ ex.s -o ex
+#clang -O3 -o out out_op.ll -Wl,--no- as-needed -lm

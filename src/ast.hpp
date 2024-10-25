@@ -15,14 +15,17 @@
 #include <llvm/IR/Value.h>
 
 
-
 class ASTNode;
 class VariableDeclarationNode;
 class VariableReferenceNode;
+class VariableValueNode;
+class ArrayTypeNode;
 class IntegerLiteralNode;
+class StringLiteralNode;
 class StructDeclarationNode;
 class StructInstantiationNode;
 class FunctionNode;
+class FunctionInstantiationNode;
 class FunctionCallNode;
 class ConstructorNode;
 class MethodNode;
@@ -32,17 +35,24 @@ class IfNode;
 class WhileNode;
 class ForNode;
 class ExpressionStatementNode;
+class Bitcast;
 class AssignmentNode;
 class BlockNode;
 
 class Visitor {
   virtual llvm::Value* visit(ExpressionStatementNode &node) = 0;
+  virtual llvm::Value* visit(Bitcast &node) = 0;
   virtual llvm::Value* visit(VariableDeclarationNode &node) = 0;
+  virtual llvm::Value* visit(VariableValueNode &node) = 0;
+
+  virtual llvm::Value* visit(ArrayTypeNode &node) = 0;
   virtual llvm::Value* visit(VariableReferenceNode &node) = 0;
   virtual llvm::Value* visit(IntegerLiteralNode &node) = 0;
+  virtual llvm::Value* visit(StringLiteralNode &node) = 0;
   virtual llvm::Value* visit(StructDeclarationNode &node) = 0;
   virtual llvm::Value* visit(StructInstantiationNode &node) = 0;
   virtual llvm::Value* visit(FunctionNode &node) = 0;
+  virtual llvm::Value* visit(FunctionInstantiationNode &node) = 0;
   virtual llvm::Value* visit(FunctionCallNode &node) = 0;
   virtual llvm::Value* visit(ConstructorNode &node) = 0;
   virtual llvm::Value* visit(MethodNode &node) = 0;
@@ -69,12 +79,17 @@ public:
   LLVMCodeGenVisitor(llvm::IRBuilder<> *builder, llvm::LLVMContext *context, llvm::Module *module) : builder(builder), context(context), module(module) {}
 
   llvm::Value* visit(ExpressionStatementNode &node) override;
+  llvm::Value* visit(Bitcast &node) override;
   llvm::Value* visit(VariableDeclarationNode &node) override;
   llvm::Value* visit(VariableReferenceNode &node) override;
+  llvm::Value* visit(VariableValueNode &node) override;
+  llvm::Value* visit(ArrayTypeNode &node) override;
   llvm::Value* visit(IntegerLiteralNode &node) override;
+  llvm::Value* visit(StringLiteralNode &node) override;
   llvm::Value* visit(StructDeclarationNode &node) override;
   llvm::Value* visit(StructInstantiationNode &node) override;
   llvm::Value* visit(FunctionNode &node) override;
+  llvm::Value* visit(FunctionInstantiationNode &node) override;
   llvm::Value* visit(FunctionCallNode &node) override;
   llvm::Value* visit(ConstructorNode &node) override;
   llvm::Value* visit(MethodNode &node) override;
@@ -111,6 +126,34 @@ public:
 
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
+
+class Bitcast : public  ASTNode {
+    public:
+    //llvm::Type* srcType;
+    llvm::Type* destType;
+    std::unique_ptr<ASTNode> expr;
+
+    Bitcast( llvm::Type* dest, std::unique_ptr<ASTNode> expr)
+        :  destType(dest), expr(std::move(expr)) {}
+
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+
+};
+
+class ArrayTypeNode : public ASTNode {
+public:
+    std::string arrayType; 
+    int size;
+    std::vector<std::unique_ptr<ASTNode>> initializer; 
+
+    ArrayTypeNode(const std::string &type, int size, std::vector<std::unique_ptr<ASTNode>> init)
+        : arrayType(type), size(size), initializer(std::move(init)) {}
+
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+};
+
+
+
 class IntegerLiteralNode : public ASTNode {
 public:
     std::string type;
@@ -120,6 +163,7 @@ IntegerLiteralNode(const std::string &type, int val) : type(type),value(val) {}
 
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
+
 
 class VariableDeclarationNode : public ASTNode {
 public:
@@ -140,6 +184,29 @@ public:
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
 
+class StringLiteralNode : public ASTNode {
+public:
+    std::string value;
+    std::string name;
+    bool isConstant; 
+
+StringLiteralNode(const std::string &val, bool constant = false)
+        : value(val), isConstant(constant) {}
+    StringLiteralNode(const std::string &val, const std::string& name, bool constant)
+        : value(val), name(name), isConstant(constant) {}
+
+    const std::string& getValue() const {
+        return value;
+    }
+
+    bool isConstantString() const {
+        return isConstant;
+    }
+
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+};
+
+
 class VariableReferenceNode : public ASTNode {
 public:
     std::string variableName;
@@ -156,6 +223,25 @@ public:
         return varType;
     }
 };
+
+class VariableValueNode : public ASTNode {
+public:
+    std::string variableName;
+    std::string varType;
+
+    explicit VariableValueNode(const std::string& name, const std::string& type)
+        : variableName(name), varType(type) {}
+
+    std::string getName() const {
+        return variableName;
+    }
+    std::string getType() const {
+        return varType;
+    }
+
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+};
+
 
 class FunctionCallNode : public ASTNode {
 public:
@@ -219,6 +305,29 @@ public:
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
 
+class FunctionInstantiationNode : public ASTNode {
+public:
+    std::string name;
+    std::string returnType;
+    std::vector<std::unique_ptr<VariableDeclarationNode>> parameters;  
+    bool isExtern; 
+    bool hasVarArgs; 
+
+    FunctionInstantiationNode(
+        const std::string &name,
+        const std::string &returnType,
+        std::vector<std::unique_ptr<VariableDeclarationNode>> params,
+        bool isExtern = false,
+        bool hasVarArgs = false
+    )
+        : name(name),
+          returnType(returnType),
+          parameters(std::move(params)),
+          isExtern(isExtern),
+          hasVarArgs(hasVarArgs) {}
+
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+};
 
 
 class ConstructorNode : public FunctionNode {
@@ -306,18 +415,18 @@ public:
 };
 
 
-    class ForNode : public ASTNode {
-    public:
-        std::unique_ptr<VariableDeclarationNode> initializer;
-        std::unique_ptr<BinaryExpressionNode> condition;
-        std::unique_ptr<BinaryExpressionNode> increment;
-        std::unique_ptr<BlockNode> body;
+class ForNode : public ASTNode {
+public:
+    std::unique_ptr<VariableDeclarationNode> initializer;
+    std::unique_ptr<BinaryExpressionNode> condition;
+    std::unique_ptr<BinaryExpressionNode> increment;
+    std::unique_ptr<BlockNode> body;
 
-        ForNode(std::unique_ptr<VariableDeclarationNode> init, std::unique_ptr<BinaryExpressionNode> cond, std::unique_ptr<BinaryExpressionNode> incr, std::unique_ptr<BlockNode> b)
-            : initializer(std::move(init)), condition(std::move(cond)), increment(std::move(incr)), body(std::move(b)) {}
+    ForNode(std::unique_ptr<VariableDeclarationNode> init, std::unique_ptr<BinaryExpressionNode> cond, std::unique_ptr<BinaryExpressionNode> incr, std::unique_ptr<BlockNode> b)
+        : initializer(std::move(init)), condition(std::move(cond)), increment(std::move(incr)), body(std::move(b)) {}
 
-        llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
-    };
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+};
 
 class AssignmentNode : public ASTNode {
 public:

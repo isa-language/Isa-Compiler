@@ -32,11 +32,13 @@ llvm::Type* LLVMCodeGenVisitor::getLLVMTypeFromASTType(const std::string& type) 
     else if (type == "f64") return llvm::Type::getDoubleTy(*context);
     else if (type == "void") return llvm::Type::getVoidTy(*context);
     else if (type == "string") return llvm::Type::getInt8PtrTy(*context);
+    else if (type == "[i8]") return llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), 5);
     return nullptr;
 }
 
 llvm::Type* LLVMCodeGenVisitor::getLLVMType(const std::string &type) {
     if (type == "i8")       return llvm::Type::getInt8Ty(*context);
+    if (type == "i8*")       return llvm::Type::getInt8PtrTy(*context);
     else if (type == "i16") return llvm::Type::getInt16Ty(*context);
     else if (type == "i32") return llvm::Type::getInt32Ty(*context);
     else if (type == "i64") return llvm::Type::getInt64Ty(*context);
@@ -47,7 +49,7 @@ llvm::Type* LLVMCodeGenVisitor::getLLVMType(const std::string &type) {
     else if (type == "f16") return llvm::Type::getHalfTy(*context);
     else if (type == "f32") return llvm::Type::getFloatTy(*context);
     else if (type == "f64") return llvm::Type::getDoubleTy(*context);
-
+    else if (type == "[i8]") return llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), 5);
     else if (type == "string") return llvm::Type::getInt8PtrTy(*context);
     return nullptr;
 }
@@ -88,8 +90,8 @@ llvm::Value* LLVMCodeGenVisitor::getInitValueForType(const std::string &type) {
 }
 
 void LLVMCodeGenVisitor::addVariable(const std::string &name, llvm::Value *value) {
-        variables[name] = value;
-    }
+    variables[name] = value;
+}
 
 
 llvm::Value* LLVMCodeGenVisitor::getVariable(const std::string &name) {
@@ -117,7 +119,6 @@ llvm::Value* LLVMCodeGenVisitor::visit(VariableDeclarationNode &node) {
         return nullptr;
     }
 
-    // Verifique se o nome da variável é válido.
     if (node.varName.empty()) {
         std::cerr << "Nome da variável não pode ser vazio" << std::endl;
         return nullptr;
@@ -132,15 +133,89 @@ llvm::Value* LLVMCodeGenVisitor::visit(VariableDeclarationNode &node) {
     return alloca;
 }
 
+llvm::Value* LLVMCodeGenVisitor::visit(ArrayTypeNode &node) {
+    llvm::Type* llvmElementType = getLLVMTypeFromASTType(node.arrayType);
+    if (!llvmElementType) {
+        throw std::runtime_error("Unsupported array element type: " + node.arrayType);
+    }
+
+    llvm::ArrayType* arrayType = llvm::ArrayType::get(llvmElementType, node.size);
+
+    llvm::Value* arrayAlloc = builder->CreateAlloca(arrayType, nullptr, "array_alloc");
+
+    if (node.initializer.empty()) {
+
+        int count = 0;
+        for (auto &a: node.initializer) {
+           
+            llvm::Value* value = a->accept(*this);
+            llvm::Value* index = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), count);
+            llvm::Value* elementPtr = builder->CreateGEP(arrayType, arrayAlloc, index, "element_ptr");
+            builder->CreateStore(value, elementPtr);
+        }
+    }
+
+    return arrayAlloc; 
+}
+
+
 
 llvm::Value* LLVMCodeGenVisitor::visit(ExpressionStatementNode &node) {
     llvm::Value* exprValue = node.expression->accept(*this);
     return nullptr;
 }
+llvm::Value* LLVMCodeGenVisitor::visit(VariableValueNode &node) {
+    llvm::Value *variable = module->getGlobalVariable(node.getName());
+    if (!variable) {
+        variable = variables[node.variableName]; 
+    }
+
+    if (!variable) {
+        throw std::runtime_error("Variable not found: " + node.getName());
+    }
+
+
+    llvm::Type *valueType = getLLVMType(node.getType());
+    llvm::Value *loadedValue = builder->CreateLoad(valueType, variable, node.getName() + "_val");
+
+    return loadedValue;
+}
+
 
 llvm::Value* LLVMCodeGenVisitor::visit(IntegerLiteralNode &node) {
     return llvm::ConstantInt::get(getLLVMType(node.type), node.value);
 }
+llvm::Value* LLVMCodeGenVisitor::visit(StringLiteralNode &node) {
+    if (node.isConstantString()) {
+        llvm::ArrayType *arrayType = llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), node.getValue().length() + 1);
+        llvm::GlobalVariable *stringVar = new llvm::GlobalVariable(
+            *module,
+            arrayType,
+            node.isConstant,
+            llvm::GlobalValue::PrivateLinkage,
+            llvm::ConstantDataArray::getString(*context, node.value, true), 
+            node.name 
+        );
+
+        std::vector<llvm::Constant*> chars;
+        for (char c : node.getValue()) {
+            chars.push_back(llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), c));
+        }
+        chars.push_back(llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), 0));
+
+        llvm::Constant *initializer = llvm::ConstantArray::get(arrayType, chars);
+        stringVar->setInitializer(initializer);
+
+
+        llvm::Value *bitcastedStr = builder->CreateBitCast(stringVar, llvm::Type::getInt8PtrTy(*context));
+
+        return bitcastedStr;
+    } else {
+
+        return builder->CreateGlobalStringPtr(node.getValue(), "string_literal");
+    }
+}
+
 llvm::Value* LLVMCodeGenVisitor::visit(FunctionNode &node) {
     llvm::Type *returnType = getLLVMTypeFromASTType(node.returnType);
     std::vector<llvm::Type*> paramTypes;
@@ -177,21 +252,93 @@ llvm::Value* LLVMCodeGenVisitor::visit(FunctionNode &node) {
     return function;
 }
 
+llvm::Value* LLVMCodeGenVisitor::visit(FunctionInstantiationNode &node) {
+    if (node.isExtern) {
+        llvm::FunctionType *funcType;
+        if (node.hasVarArgs) {
+            std::vector<llvm::Type*> paramTypes;
+            for (const auto &param : node.parameters) {
+                paramTypes.push_back(getLLVMTypeFromASTType(param->varType));
+            }
+            funcType = llvm::FunctionType::get(
+                getLLVMTypeFromASTType(node.returnType),
+                paramTypes,
+                true 
+            );
+        } else {
+            std::vector<llvm::Type*> paramTypes;
+            for (const auto &param : node.parameters) {
+                paramTypes.push_back(getLLVMTypeFromASTType(param->varType));
+            }
+            funcType = llvm::FunctionType::get(
+                getLLVMTypeFromASTType(node.returnType),
+                paramTypes,
+                false
+            );
+        }
+
+        llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, node.name, module);
+        return nullptr; 
+    }
+    std::vector<llvm::Type*> paramTypes;
+    for (const auto &param : node.parameters) {
+        paramTypes.push_back(getLLVMTypeFromASTType(param->varType));
+    }
+    llvm::FunctionType *funcType = llvm::FunctionType::get(
+        getLLVMTypeFromASTType(node.returnType),
+        paramTypes,
+        false 
+    );
+
+    llvm::Function *function = llvm::Function::Create(
+        funcType, 
+        llvm::Function::ExternalLinkage, 
+        node.name, 
+        module
+    );
+
+    unsigned idx = 0;
+    for (auto &arg : function->args()) {
+        arg.setName(node.parameters[idx]->varName);
+        idx++;
+    }
+
+    return function;
+}
+
+
+
+
+llvm::Value* LLVMCodeGenVisitor::visit(Bitcast &node) {
+    llvm::Value* value = node.expr->accept(*this);
+
+    if (!value) {
+        throw std::runtime_error("Bitcast source value is null.");
+    }
+
+    if (!node.destType) {
+        throw std::runtime_error("Destination type for bitcast cannot be null.");
+    }
+    return builder->CreateBitCast(value, node.destType);
+}
+
+
+
 llvm::Value* LLVMCodeGenVisitor::visit(FunctionCallNode &node) {
-    llvm::Function* function = module->getFunction(node.functionName);
+    llvm::Function *function = module->getFunction(node.functionName);
     if (!function) {
         throw std::runtime_error("Function not found: " + node.functionName);
     }
 
-    std::vector<llvm::Value*> llvmArguments;
-    
-    for (auto &arg : node.arguments) {
-        llvm::Value* argValue = arg->accept(*this);
-        llvmArguments.push_back(argValue);
+    std::vector<llvm::Value*> argValues;
+
+    for (const auto& arg : node.arguments) {
+        argValues.push_back(arg->accept(*this));
     }
 
-    return builder->CreateCall(function, llvmArguments);
+    return builder->CreateCall(function, argValues, "calltmp");
 }
+
 
 
 llvm::Value* LLVMCodeGenVisitor::visit(StructDeclarationNode &node) {
@@ -388,57 +535,105 @@ llvm::Value* LLVMCodeGenVisitor::visit(VariableReferenceNode &node) {
     if (!variableValue) {
         throw std::runtime_error("Undefined variable: " + node.variableName);
     }
+
     return variableValue;
 }
 
-llvm::Value* LLVMCodeGenVisitor::visit(ReturnNode &node){
-    return nullptr;
-}
-llvm::Value* LLVMCodeGenVisitor::visit(IfNode &node){
-    return nullptr;
-}
-llvm::Value* LLVMCodeGenVisitor::visit(WhileNode &node){
-    return nullptr;
+llvm::Value* LLVMCodeGenVisitor::visit(ReturnNode &node) {
+
+    llvm::Value* returnValue = nullptr;
+    if (node.returnValue) {
+        returnValue = node.returnValue->accept(*this);
+    }
+
+    builder->CreateRet(returnValue);
+    
+    return nullptr; 
 }
 
-llvm::Value* LLVMCodeGenVisitor::visit(ForNode &node) {
+
+llvm::Value* LLVMCodeGenVisitor::visit(IfNode &node) {
     llvm::Function *function = builder->GetInsertBlock()->getParent();
-    
-    // Create basic blocks for the loop structure
+
+    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(*context, "then", function);
+    llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(*context, "else", function);
+    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(*context, "after_if", function);
+
+
+    llvm::Value *condValue = node.condition->accept(*this);
+    builder->CreateCondBr(condValue, thenBB, elseBB);
+
+    builder->SetInsertPoint(thenBB);
+    node.thenBlock->accept(*this);
+    builder->CreateBr(afterBB);
+
+
+    builder->SetInsertPoint(elseBB);
+    if (node.elseBlock) {
+        node.elseBlock->accept(*this);
+    }
+    builder->CreateBr(afterBB);
+
+
+    builder->SetInsertPoint(afterBB);
+
+    return nullptr; 
+}
+
+
+llvm::Value* LLVMCodeGenVisitor::visit(WhileNode &node) {
+    llvm::Function *function = builder->GetInsertBlock()->getParent();
+
     llvm::BasicBlock *entryBB = builder->GetInsertBlock();
     llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(*context, "loop", function);
     llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*context, "body", function);
     llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(*context, "after_loop", function);
 
-    // Initialize the loop variable
-    node.initializer->accept(*this);
-    
-    // Jump to the loop condition
     builder->CreateBr(loopBB);
     builder->SetInsertPoint(loopBB);
 
-    // Evaluate the loop condition
     llvm::Value *condValue = node.condition->accept(*this);
     builder->CreateCondBr(condValue, bodyBB, afterBB);
 
-    // Execute the loop body
     builder->SetInsertPoint(bodyBB);
     node.body->accept(*this);
 
-    // Process the increment expression (ensure this updates the variable)
+    builder->CreateBr(loopBB);
+
+    builder->SetInsertPoint(afterBB);
+
+    return nullptr; 
+}
+
+
+llvm::Value* LLVMCodeGenVisitor::visit(ForNode &node) {
+    llvm::Function *function = builder->GetInsertBlock()->getParent();
+    
+    llvm::BasicBlock *entryBB = builder->GetInsertBlock();
+    llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(*context, "loop", function);
+    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*context, "body", function);
+    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(*context, "after_loop", function);
+
+    node.initializer->accept(*this);
+
+    builder->CreateBr(loopBB);
+    builder->SetInsertPoint(loopBB);
+
     node.increment->accept(*this);
 
-    // Jump back to the loop condition
+    llvm::Value *condValue = node.condition->accept(*this);
+    builder->CreateCondBr(condValue, bodyBB, afterBB);
+
+    builder->SetInsertPoint(bodyBB);
+    node.body->accept(*this);
+
+
     builder->CreateBr(loopBB);
-    
-    // Set the insert point after the loop
+
     builder->SetInsertPoint(afterBB);
 
     return nullptr;
 }
-
-
-
 
 
 
