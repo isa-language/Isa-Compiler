@@ -1,7 +1,0 @@
-/home/guilherme/Documentos/compilador/Isa-Compiler/build/CMakeFiles/intrinsics_gen.dir
-/home/guilherme/Documentos/compilador/Isa-Compiler/build/CMakeFiles/omp_gen.dir
-/home/guilherme/Documentos/compilador/Isa-Compiler/build/CMakeFiles/acc_gen.dir
-/home/guilherme/Documentos/compilador/Isa-Compiler/build/CMakeFiles/RISCVTargetParserTableGen.dir
-/home/guilherme/Documentos/compilador/Isa-Compiler/build/CMakeFiles/isa.dir
-/home/guilherme/Documentos/compilador/Isa-Compiler/build/CMakeFiles/edit_cache.dir
-/home/guilherme/Documentos/compilador/Isa-Compiler/build/CMakeFiles/rebuild_cache.dir
