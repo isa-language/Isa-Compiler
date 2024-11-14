@@ -1,7 +1,12 @@
-// declaration
-fn add( a: i32, b: i32 ) -> i32;
+fn add(a: i32,b: i32) -> i32;
+fn puts(value: i8) -> i32;
 
-// implemented
-fn add(a: i32, b: i32) -> i32 {
-    return a + b;
+fn test_void(nome:i8) -> void;
+
+
+fn main(argc: i16, argv: string) -> i32 {
+    let:string test = "olá, mundo!";
+    let:i16 num = 10;
+    let:i32 num2 = 11 + num + 22 / num;
+    return 0;
 }

@@ -50,7 +50,7 @@ void Error::printError(const std::vector<std::string> codes) {
     if (i == line - 1) {
       std::cout << (i + 1) << " | " << codes[i] << '\n';
         // std::cout << colunm <<  '\n'; 
-        std::cout << std::string(colunm + (countdigits(i+1) + 2), ' ')  << "↑______" << message << '\n';
+        std::cout << std::string(colunm + (countdigits(i) + 3), ' ')  << "↑______" << message << '\n';
     }
   }
   

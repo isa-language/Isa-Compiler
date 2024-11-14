@@ -38,19 +38,74 @@ llvm::Type* LLVMCodeGenVisitor::getLLVMTypeFromASTType(const std::string& type) 
 
 llvm::Type* LLVMCodeGenVisitor::getLLVMType(const std::string &type) {
     if (type == "i8")       return llvm::Type::getInt8Ty(*context);
-    if (type == "i8*")       return llvm::Type::getInt8PtrTy(*context);
-    else if (type == "i16") return llvm::Type::getInt16Ty(*context);
-    else if (type == "i32") return llvm::Type::getInt32Ty(*context);
-    else if (type == "i64") return llvm::Type::getInt64Ty(*context);
-    else if (type == "u8")  return llvm::Type::getInt8PtrTy(*context, true);
-    else if (type == "u16")  return llvm::Type::getInt16PtrTy(*context, true);
-    else if (type == "u32") return llvm::Type::getInt32PtrTy(*context, true);
-    else if (type == "u64")  return llvm::Type::getInt64PtrTy(*context, true);
-    else if (type == "f16") return llvm::Type::getHalfTy(*context);
-    else if (type == "f32") return llvm::Type::getFloatTy(*context);
-    else if (type == "f64") return llvm::Type::getDoubleTy(*context);
-    else if (type == "[i8]") return llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), 5);
-    else if (type == "string") return llvm::Type::getInt8PtrTy(*context);
+    if (type == "i8*")      return llvm::Type::getInt8PtrTy(*context);
+    if (type == "i16")      return llvm::Type::getInt16Ty(*context);
+    if (type == "i32")      return llvm::Type::getInt32Ty(*context);
+    if (type == "i64")      return llvm::Type::getInt64Ty(*context);
+    if (type == "u8")       return llvm::Type::getInt8PtrTy(*context, true);
+    if (type == "u16")      return llvm::Type::getInt16PtrTy(*context, true);
+    if (type == "u32")      return llvm::Type::getInt32PtrTy(*context, true);
+    if (type == "u64")      return llvm::Type::getInt64PtrTy(*context, true);
+    if (type == "f16")      return llvm::Type::getHalfTy(*context);
+    if (type == "f32")      return llvm::Type::getFloatTy(*context);
+    if (type == "f64")      return llvm::Type::getDoubleTy(*context);
+    if (type == "bool")     return llvm::Type::getInt1Ty(*context);
+    if (type == "void") return llvm::Type::getVoidTy(*context);
+    if (type == "string")   return llvm::Type::getInt8PtrTy(*context);
+
+    // String array with specific length (e.g., "str[10]")
+    if (type.rfind("str[", 0) == 0) {
+        size_t start = type.find('[') + 1;
+        size_t end = type.find(']');
+        int length = std::stoi(type.substr(start, end - start));
+        return llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), length);
+    }
+
+    // General array (e.g., "array[i32, 5]")
+    if (type.rfind("[", 0) == 0) {
+        size_t start = type.find('[') + 1;
+        size_t comma = type.find(',');
+        size_t end = type.find(']');
+
+        std::string elementType = type.substr(start, comma - start);
+        int arraySize = std::stoi(type.substr(comma + 1, end - comma - 1));
+
+        llvm::Type* llvmElementType = getLLVMType(elementType);
+        if (llvmElementType) {
+            return llvm::ArrayType::get(llvmElementType, arraySize);
+        }
+    }
+
+    // Pointer type (e.g., "i32*")
+    if (type.back() == '*') {
+        std::string baseType = type.substr(0, type.size() - 1);
+        llvm::Type* llvmBaseType = getLLVMType(baseType);
+        if (llvmBaseType) {
+            return llvmBaseType->getPointerTo();
+        }
+    }
+
+    // Reference type (e.g., "i32&")
+    if (type.back() == '&') {
+        std::string baseType = type.substr(0, type.size() - 1);
+        llvm::Type* llvmBaseType = getLLVMType(baseType);
+        if (llvmBaseType) {
+            return llvmBaseType->getPointerTo();  // Represented as a pointer
+        }
+    }
+
+    // Identifiers (e.g., structs)
+    module->getIdentifiedStructTypes();
+   if (type == "struct") {
+        std::vector<llvm::StructType*> identifiedStructs = module->getIdentifiedStructTypes();
+        for (auto *structType : identifiedStructs) {
+    if (structType->hasName()) {
+            std::cout << "Identified struct: " << structType->getName().str() << std::endl;
+        }
+    }
+        return nullptr;
+    }
+
     return nullptr;
 }
 llvm::Value* LLVMCodeGenVisitor::getInitValueForType(const std::string &type) {
@@ -72,7 +127,7 @@ llvm::Value* LLVMCodeGenVisitor::getInitValueForType(const std::string &type) {
         std::string elementType = type.substr(startPos, endPos - startPos);
         size_t arraySize = std::stoi(type.substr(endPos + 1, type.find(']') - endPos - 1));
 
-        llvm::Type* llvmElementType = getLLVMTypeFromASTType(elementType);
+        llvm::Type* llvmElementType = getLLVMType(elementType);
         std::vector<llvm::Constant*> initialValues;
         for (size_t i = 0; i < arraySize; ++i) {
             initialValues.push_back(static_cast<llvm::Constant*>(getInitValueForType(elementType)));
@@ -134,7 +189,7 @@ llvm::Value* LLVMCodeGenVisitor::visit(VariableDeclarationNode &node) {
 }
 
 llvm::Value* LLVMCodeGenVisitor::visit(ArrayTypeNode &node) {
-    llvm::Type* llvmElementType = getLLVMTypeFromASTType(node.arrayType);
+    llvm::Type* llvmElementType = getLLVMType(node.arrayType);
     if (!llvmElementType) {
         throw std::runtime_error("Unsupported array element type: " + node.arrayType);
     }
@@ -165,7 +220,8 @@ llvm::Value* LLVMCodeGenVisitor::visit(ExpressionStatementNode &node) {
     return nullptr;
 }
 llvm::Value* LLVMCodeGenVisitor::visit(VariableValueNode &node) {
-    llvm::Value *variable = module->getGlobalVariable(node.getName());
+    //llvm::Value *variable = module->getGlobalVariable(node.getName());
+    llvm::Value* variable = lookupVariable(node.getName());
     if (!variable) {
         variable = variables[node.variableName]; 
     }
@@ -217,11 +273,11 @@ llvm::Value* LLVMCodeGenVisitor::visit(StringLiteralNode &node) {
 }
 
 llvm::Value* LLVMCodeGenVisitor::visit(FunctionNode &node) {
-    llvm::Type *returnType = getLLVMTypeFromASTType(node.returnType);
+    llvm::Type *returnType = getLLVMType(node.returnType);
     std::vector<llvm::Type*> paramTypes;
 
     for (const auto &param : node.parameters) {
-        llvm::Type *paramType = getLLVMTypeFromASTType(param->varType);
+        llvm::Type *paramType = getLLVMType(param->varType);
         paramTypes.push_back(paramType);
     }
 
@@ -253,25 +309,26 @@ llvm::Value* LLVMCodeGenVisitor::visit(FunctionNode &node) {
 }
 
 llvm::Value* LLVMCodeGenVisitor::visit(FunctionInstantiationNode &node) {
+    functionTypes[node.name] = node.returnType;
     if (node.isExtern) {
         llvm::FunctionType *funcType;
         if (node.hasVarArgs) {
             std::vector<llvm::Type*> paramTypes;
             for (const auto &param : node.parameters) {
-                paramTypes.push_back(getLLVMTypeFromASTType(param->varType));
+                paramTypes.push_back(getLLVMType(param->varType));
             }
             funcType = llvm::FunctionType::get(
-                getLLVMTypeFromASTType(node.returnType),
+                getLLVMType(node.returnType),
                 paramTypes,
                 true 
             );
         } else {
             std::vector<llvm::Type*> paramTypes;
             for (const auto &param : node.parameters) {
-                paramTypes.push_back(getLLVMTypeFromASTType(param->varType));
+                paramTypes.push_back(getLLVMType(param->varType));
             }
             funcType = llvm::FunctionType::get(
-                getLLVMTypeFromASTType(node.returnType),
+                getLLVMType(node.returnType),
                 paramTypes,
                 false
             );
@@ -282,10 +339,10 @@ llvm::Value* LLVMCodeGenVisitor::visit(FunctionInstantiationNode &node) {
     }
     std::vector<llvm::Type*> paramTypes;
     for (const auto &param : node.parameters) {
-        paramTypes.push_back(getLLVMTypeFromASTType(param->varType));
+        paramTypes.push_back(getLLVMType(param->varType));
     }
     llvm::FunctionType *funcType = llvm::FunctionType::get(
-        getLLVMTypeFromASTType(node.returnType),
+        getLLVMType(node.returnType),
         paramTypes,
         false 
     );
@@ -319,25 +376,34 @@ llvm::Value* LLVMCodeGenVisitor::visit(Bitcast &node) {
     if (!node.destType) {
         throw std::runtime_error("Destination type for bitcast cannot be null.");
     }
-    return builder->CreateBitCast(value, node.destType);
+    return builder->CreateBitCast(value, node.destType, "fmt_ptr");
 }
 
 
 
 llvm::Value* LLVMCodeGenVisitor::visit(FunctionCallNode &node) {
-    llvm::Function *function = module->getFunction(node.functionName);
-    if (!function) {
-        throw std::runtime_error("Function not found: " + node.functionName);
+    auto it = functionTypes.find(node.functionName);
+    
+    if (it != functionTypes.end()) {
+        llvm::Function *function = module->getFunction(node.functionName);
+        if (!function) {
+            throw std::runtime_error("Function not found: " + node.functionName);
+        }
+        
+        std::vector<llvm::Value*> argValues;
+        for (const auto& arg : node.arguments) {
+            argValues.push_back(arg->accept(*this));
+        }
+        if (it->second == "void") {
+            
+            return builder->CreateCall(function, argValues);
+        } else {
+            return builder->CreateCall(function, argValues, "calltmp");
+        }
     }
-
-    std::vector<llvm::Value*> argValues;
-
-    for (const auto& arg : node.arguments) {
-        argValues.push_back(arg->accept(*this));
-    }
-
-    return builder->CreateCall(function, argValues, "calltmp");
+    return nullptr;
 }
+
 
 
 
@@ -418,12 +484,12 @@ llvm::Value* LLVMCodeGenVisitor::visit(BinaryExpressionNode &node) {
 
     if (left->getType()->isPointerTy()) {
         auto varDecl = dynamic_cast<VariableReferenceNode*>(node.left.get());
-        left = builder->CreateLoad(getLLVMTypeFromASTType(varDecl->getType()), left, "load_left");
+        left = builder->CreateLoad(getLLVMType(varDecl->getType()), left, "load_left");
     }
 
     if (right->getType()->isPointerTy()) {
         auto varDecl = dynamic_cast<VariableReferenceNode*>(node.right.get());
-        right = builder->CreateLoad(getLLVMTypeFromASTType(varDecl->getType()), right, "load_right");
+        right = builder->CreateLoad(getLLVMType(varDecl->getType()), right, "load_right");
     }
 
 
@@ -505,7 +571,7 @@ llvm::Value* LLVMCodeGenVisitor::visit(BinaryExpressionNode &node) {
         if (varDecl) {
             llvm::Value* ptr = lookupVariable(varDecl->getName()); 
             if (ptr) {
-                llvm::Value* currentValue = builder->CreateLoad(getLLVMTypeFromASTType(varDecl->getType()), ptr, "current_value");
+                llvm::Value* currentValue = builder->CreateLoad(getLLVMType(varDecl->getType()), ptr, "current_value");
                 llvm::Value* updatedValue;
                 if (currentValue->getType()->isIntegerTy() && right->getType()->isIntegerTy()) {
                     updatedValue = builder->CreateAdd(currentValue, right, "updated_value");

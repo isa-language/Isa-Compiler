@@ -8,6 +8,7 @@
 #include "nametoken.hpp"
 #include "src/file.hpp"
 #include "flags.hpp"
+#include "src/parser_ast.hpp"
 
 /* alterar valor no modo de compilação! */
 // #define DEBUG 0 // cmake -DENABLE_DEBUG=ON .. ou OFF 
@@ -16,7 +17,7 @@
 
 int main(int argc, char **argv) {
 #if DEBUG
-    /*
+    
     std::string codes = R"(let:i32 test = 1000;
         let:i32 num = 22;
 )";
@@ -25,15 +26,16 @@ int main(int argc, char **argv) {
     }
     std::vector<std::string> err = splitByErr(codes);
     Lexer lexer(codes);
-    */
+    IsaParser parser(lexer.tokenize(),argv[1],err);
+    auto AST = parser.parseProgram();
+
     IsaLLVM isa;
-    isa.exec();
-    // isa.exec(std::move(parser.programa->program));
+    if(!parser.getErr()) isa.exec(std::move(AST));
+   
+    
 #else
 
-    
-    /* Exemplo code */
-    std::string codes {"let:i32 num = 10;"};
+     std::string codes {"let:i32 num = 10;"};
     if(argc > 1) {
         codes = fileopen(std::string(argv[1]));
     }
@@ -59,7 +61,6 @@ int main(int argc, char **argv) {
     //IsaLLVM isa;
     //isa.exec(tokens);
     #endif
-
 
     return 0;
 }

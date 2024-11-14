@@ -1,2 +1,5 @@
+**/build
 **/.vscode
 **/src/backup
+/test.c
+/Makefile

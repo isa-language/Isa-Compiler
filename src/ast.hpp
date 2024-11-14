@@ -71,6 +71,7 @@ public:
     llvm::LLVMContext *context;
     llvm::Module *module;
     std::unordered_map<std::string, llvm::StructType*> structTypes;
+    std::unordered_map<std::string, std::string> functionTypes;
     std::unordered_map<std::string, llvm::Value*> allocatedStructs;
     std::unordered_map<std::string, llvm::Value*> symbolTable;
 
@@ -117,6 +118,17 @@ public:
     virtual llvm::Value* accept(class LLVMCodeGenVisitor &visitor) = 0;
 };
 
+class Program {
+    public:
+    std::vector<std::unique_ptr<ASTNode>> program;
+    void addDeclaration(std::unique_ptr<ASTNode> node) {
+        program.push_back(std::move(node));
+    }
+    std::vector<std::unique_ptr<ASTNode>> getProgram() {
+        return std::move(program);
+    }
+};
+
 class ExpressionStatementNode : public ASTNode {
 public:
     std::unique_ptr<ASTNode> expression;
@@ -159,7 +171,8 @@ public:
     std::string type;
     int value;
 
-IntegerLiteralNode(const std::string &type, int val) : type(type),value(val) {}
+    IntegerLiteralNode(const std::string &type, int val) : type(type),value(val) {}
+    IntegerLiteralNode(const std::string &type = "i32") : type(type) {}
 
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
@@ -250,6 +263,8 @@ public:
 
     FunctionCallNode(const std::string &name, std::vector<std::unique_ptr<ASTNode>> args)
         : functionName(name), arguments(std::move(args)) {}
+    FunctionCallNode(const std::string &name)
+        : functionName(name) {}
     
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
@@ -325,6 +340,17 @@ public:
           parameters(std::move(params)),
           isExtern(isExtern),
           hasVarArgs(hasVarArgs) {}
+    FunctionInstantiationNode(
+        const std::string &name,
+        const std::string &returnType,
+        bool isExtern = false,
+        bool hasVarArgs = false
+    )
+        : name(name),
+          returnType(returnType),
+          isExtern(isExtern),
+          hasVarArgs(hasVarArgs) {}
+          
 
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };

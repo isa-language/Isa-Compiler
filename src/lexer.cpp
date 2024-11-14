@@ -69,7 +69,7 @@ Token Lexer::handleIdentifierOrKeyword() {
         {"i8", TOK_TYPE}, {"i16", TOK_TYPE}, {"i32", TOK_TYPE}, {"i64", TOK_TYPE},
         {"u8", TOK_TYPE}, {"u16", TOK_TYPE}, {"u32", TOK_TYPE}, {"u64", TOK_TYPE},
         {"f8", TOK_TYPE}, {"f16", TOK_TYPE}, {"f32", TOK_TYPE}, {"f64", TOK_TYPE},
-        {"bool", TOK_TYPE}, {"string", TOK_TYPE}, {"array", TOK_TYPE}
+        {"bool", TOK_TYPE}, {"string", TOK_TYPE}, {"array", TOK_TYPE},{"void", TOK_TYPE}
     };
 
     it = types.find(value);
@@ -133,8 +133,16 @@ Token Lexer::handleOperatorOrDelimiter() {
         case '[': return Token(TOK_LBRACKET, "[", line, startColumn);
         case ']': return Token(TOK_RBRACKET, "]", line, startColumn);
         case '+': return Token(TOK_PLUS, "+", line, startColumn);
-        case '-': return Token(TOK_MINUS, "-", line, startColumn);
+        case '-': {
+            if (source[position] == '>') {
+                position++;
+                column++;
+                return Token(TOK_ARROW, "->", line, startColumn);
+            }
+            return Token(TOK_MINUS, "-", line, startColumn);
+        }
         case '*': return Token(TOK_STAR, "*", line, startColumn);
+        case '&': return Token(TOK_STAR, "&", line, startColumn);
         case '/': return Token(TOK_SLASH, "/", line, startColumn);
         case '!':
             if (source[position] == '=') {

@@ -29,6 +29,7 @@ enum TokenType {
 
     // Operators and Delimiters
     TOK_ASSIGN,  // '='
+    TOK_ARROW,  // ->
     TOK_SEMICOLON,  // ';'
     TOK_COMMA,  // ','
     TOK_LPAREN,  // '('
@@ -49,6 +50,7 @@ enum TokenType {
     TOK_GE,  // '>='
     TOK_COLON,  // ':'
     TOK_DOT,  // '.'
+    TOK_AMP,    //&
 
     // End of File
     TOK_EOF,
@@ -65,4 +67,5 @@ struct Token {
 
     Token(TokenType type, const std::string& value, int line, int column)
         : type(type), value(value), line(line), column(column) {}
+    Token() {}
 };
