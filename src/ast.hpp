@@ -39,31 +39,37 @@ class Bitcast;
 class AssignmentNode;
 class BlockNode;
 
-class Visitor {
-  virtual llvm::Value* visit(ExpressionStatementNode &node) = 0;
-  virtual llvm::Value* visit(Bitcast &node) = 0;
-  virtual llvm::Value* visit(VariableDeclarationNode &node) = 0;
-  virtual llvm::Value* visit(VariableValueNode &node) = 0;
+#define DEFINE_VISITOR_METHOD(NodeType) \
+  virtual llvm::Value* visit(NodeType &node) = 0;
 
-  virtual llvm::Value* visit(ArrayTypeNode &node) = 0;
-  virtual llvm::Value* visit(VariableReferenceNode &node) = 0;
-  virtual llvm::Value* visit(IntegerLiteralNode &node) = 0;
-  virtual llvm::Value* visit(StringLiteralNode &node) = 0;
-  virtual llvm::Value* visit(StructDeclarationNode &node) = 0;
-  virtual llvm::Value* visit(StructInstantiationNode &node) = 0;
-  virtual llvm::Value* visit(FunctionNode &node) = 0;
-  virtual llvm::Value* visit(FunctionInstantiationNode &node) = 0;
-  virtual llvm::Value* visit(FunctionCallNode &node) = 0;
-  virtual llvm::Value* visit(ConstructorNode &node) = 0;
-  virtual llvm::Value* visit(MethodNode &node) = 0;
-  virtual llvm::Value* visit(BinaryExpressionNode &node) = 0;
-  virtual llvm::Value* visit(ReturnNode &node) = 0;
-  virtual llvm::Value* visit(IfNode &node) = 0;
-  virtual llvm::Value* visit(WhileNode &node) = 0;
-  virtual llvm::Value* visit(ForNode &node) = 0;
-  virtual llvm::Value* visit(AssignmentNode &node) = 0;
-  virtual llvm::Value* visit(BlockNode &node) = 0;  
+
+class Visitor {
+  DEFINE_VISITOR_METHOD(ExpressionStatementNode)
+  DEFINE_VISITOR_METHOD(Bitcast)
+  DEFINE_VISITOR_METHOD(VariableDeclarationNode)
+  DEFINE_VISITOR_METHOD(VariableValueNode)
+  DEFINE_VISITOR_METHOD(ArrayTypeNode)
+  DEFINE_VISITOR_METHOD(VariableReferenceNode)
+  DEFINE_VISITOR_METHOD(IntegerLiteralNode)
+  DEFINE_VISITOR_METHOD(StringLiteralNode)
+  DEFINE_VISITOR_METHOD(StructDeclarationNode)
+  DEFINE_VISITOR_METHOD(StructInstantiationNode)
+  DEFINE_VISITOR_METHOD(FunctionNode)
+  DEFINE_VISITOR_METHOD(FunctionInstantiationNode)
+  DEFINE_VISITOR_METHOD(FunctionCallNode)
+  DEFINE_VISITOR_METHOD(ConstructorNode)
+  DEFINE_VISITOR_METHOD(MethodNode)
+  DEFINE_VISITOR_METHOD(BinaryExpressionNode)
+  DEFINE_VISITOR_METHOD(ReturnNode)
+  DEFINE_VISITOR_METHOD(IfNode)
+  DEFINE_VISITOR_METHOD(WhileNode)
+  DEFINE_VISITOR_METHOD(ForNode)
+  DEFINE_VISITOR_METHOD(AssignmentNode)
+  DEFINE_VISITOR_METHOD(BlockNode)
 };
+
+#define DEFINE_VISITOR_IMPLEMENTATION(NodeType) \
+  llvm::Value* visit(NodeType &node) override;
 
 class LLVMCodeGenVisitor : public Visitor {
 public:
@@ -79,28 +85,28 @@ public:
 
   LLVMCodeGenVisitor(llvm::IRBuilder<> *builder, llvm::LLVMContext *context, llvm::Module *module) : builder(builder), context(context), module(module) {}
 
-  llvm::Value* visit(ExpressionStatementNode &node) override;
-  llvm::Value* visit(Bitcast &node) override;
-  llvm::Value* visit(VariableDeclarationNode &node) override;
-  llvm::Value* visit(VariableReferenceNode &node) override;
-  llvm::Value* visit(VariableValueNode &node) override;
-  llvm::Value* visit(ArrayTypeNode &node) override;
-  llvm::Value* visit(IntegerLiteralNode &node) override;
-  llvm::Value* visit(StringLiteralNode &node) override;
-  llvm::Value* visit(StructDeclarationNode &node) override;
-  llvm::Value* visit(StructInstantiationNode &node) override;
-  llvm::Value* visit(FunctionNode &node) override;
-  llvm::Value* visit(FunctionInstantiationNode &node) override;
-  llvm::Value* visit(FunctionCallNode &node) override;
-  llvm::Value* visit(ConstructorNode &node) override;
-  llvm::Value* visit(MethodNode &node) override;
-  llvm::Value* visit(BinaryExpressionNode &node) override;
-  llvm::Value* visit(ReturnNode &node) override;
-  llvm::Value* visit(IfNode &node) override;
-  llvm::Value* visit(WhileNode &node) override;
-  llvm::Value* visit(ForNode &node) override;
-  llvm::Value* visit(AssignmentNode &node) override;
-  llvm::Value* visit(BlockNode &node) override;
+  DEFINE_VISITOR_IMPLEMENTATION(ExpressionStatementNode)
+  DEFINE_VISITOR_IMPLEMENTATION(Bitcast)
+  DEFINE_VISITOR_IMPLEMENTATION(VariableDeclarationNode)
+  DEFINE_VISITOR_IMPLEMENTATION(VariableReferenceNode)
+  DEFINE_VISITOR_IMPLEMENTATION(VariableValueNode)
+  DEFINE_VISITOR_IMPLEMENTATION(ArrayTypeNode)
+  DEFINE_VISITOR_IMPLEMENTATION(IntegerLiteralNode)
+  DEFINE_VISITOR_IMPLEMENTATION(StringLiteralNode)
+  DEFINE_VISITOR_IMPLEMENTATION(StructDeclarationNode)
+  DEFINE_VISITOR_IMPLEMENTATION(StructInstantiationNode)
+  DEFINE_VISITOR_IMPLEMENTATION(FunctionNode)
+  DEFINE_VISITOR_IMPLEMENTATION(FunctionInstantiationNode)
+  DEFINE_VISITOR_IMPLEMENTATION(FunctionCallNode)
+  DEFINE_VISITOR_IMPLEMENTATION(ConstructorNode)
+  DEFINE_VISITOR_IMPLEMENTATION(MethodNode)
+  DEFINE_VISITOR_IMPLEMENTATION(BinaryExpressionNode)
+  DEFINE_VISITOR_IMPLEMENTATION(ReturnNode)
+  DEFINE_VISITOR_IMPLEMENTATION(IfNode)
+  DEFINE_VISITOR_IMPLEMENTATION(WhileNode)
+  DEFINE_VISITOR_IMPLEMENTATION(ForNode)
+  DEFINE_VISITOR_IMPLEMENTATION(AssignmentNode)
+  DEFINE_VISITOR_IMPLEMENTATION(BlockNode)
 
   
   llvm::Type* getLLVMType(const std::string &type);
@@ -112,22 +118,17 @@ public:
 };
 
 
+#define DECLARE_ACCEPT_VISITOR \
+    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+
+enum class NodeType { Function, Allocation, Transaction, Borrow, OwnershipTransfer };
 class ASTNode {
 public:
     virtual ~ASTNode() = default;
+    NodeType type;
     virtual llvm::Value* accept(class LLVMCodeGenVisitor &visitor) = 0;
 };
 
-class Program {
-    public:
-    std::vector<std::unique_ptr<ASTNode>> program;
-    void addDeclaration(std::unique_ptr<ASTNode> node) {
-        program.push_back(std::move(node));
-    }
-    std::vector<std::unique_ptr<ASTNode>> getProgram() {
-        return std::move(program);
-    }
-};
 
 class ExpressionStatementNode : public ASTNode {
 public:
@@ -136,7 +137,7 @@ public:
     explicit ExpressionStatementNode(std::unique_ptr<ASTNode> expr)
         : expression(std::move(expr)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 class Bitcast : public  ASTNode {
@@ -148,7 +149,7 @@ class Bitcast : public  ASTNode {
     Bitcast( llvm::Type* dest, std::unique_ptr<ASTNode> expr)
         :  destType(dest), expr(std::move(expr)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 
 };
 
@@ -161,7 +162,7 @@ public:
     ArrayTypeNode(const std::string &type, int size, std::vector<std::unique_ptr<ASTNode>> init)
         : arrayType(type), size(size), initializer(std::move(init)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -170,11 +171,12 @@ class IntegerLiteralNode : public ASTNode {
 public:
     std::string type;
     int value;
+    bool isInt = true;
 
     IntegerLiteralNode(const std::string &type, int val) : type(type),value(val) {}
-    IntegerLiteralNode(const std::string &type = "i32") : type(type) {}
+    IntegerLiteralNode(const std::string &type = "i32") : type(type) , isInt(false){}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -194,7 +196,7 @@ public:
     VariableDeclarationNode(const std::string &name, const std::string &type,int index, std::unique_ptr<ASTNode> init)
         : varName(name), varType(type), index(index), initializer(std::move(init)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 class StringLiteralNode : public ASTNode {
@@ -216,7 +218,7 @@ StringLiteralNode(const std::string &val, bool constant = false)
         return isConstant;
     }
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -231,7 +233,7 @@ public:
     std::string getName() const {
         return variableName; 
     }
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
     std::string getType() const {
         return varType;
     }
@@ -244,7 +246,8 @@ public:
 
     explicit VariableValueNode(const std::string& name, const std::string& type)
         : variableName(name), varType(type) {}
-
+    explicit VariableValueNode(const std::string& name)
+        : variableName(name) {}
     std::string getName() const {
         return variableName;
     }
@@ -252,7 +255,7 @@ public:
         return varType;
     }
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -266,7 +269,7 @@ public:
     FunctionCallNode(const std::string &name)
         : functionName(name) {}
     
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -292,7 +295,7 @@ public:
     StructDeclarationNode(const std::string &name, std::vector<std::unique_ptr<VariableDeclarationNode>> member, std::vector<std::unique_ptr<FunctionNode>> methods)
         : structName(name), members(std::move(member)), methods(std::move(methods)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -317,7 +320,7 @@ public:
 
     FunctionNode(const std::string &name, const std::string &retType)
         : functionName(name), returnType(retType) {}
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 class FunctionInstantiationNode : public ASTNode {
@@ -352,19 +355,21 @@ public:
           hasVarArgs(hasVarArgs) {}
           
 
+    DECLARE_ACCEPT_VISITOR
+};
+/*
+class ArgsFunctionNode : public ASTNode {
+    std::vector<std::unique_ptr<VariableDeclarationNode>> arguments;
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 };
-
-
+*/
 class ConstructorNode : public FunctionNode {
 public:
     ConstructorNode(const std::string &name, std::vector<std::unique_ptr<VariableDeclarationNode>> parameters, std::vector<std::unique_ptr<ASTNode>> functionBody)
         : FunctionNode(name, "void", std::move(parameters), std::move(functionBody)) {
     }
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override {
-        return visitor.visit(*this);
-    }
+    DECLARE_ACCEPT_VISITOR
 
     bool isConstructor() {
         return true;
@@ -381,9 +386,7 @@ public:
         isMethod = true; 
     }
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override {
-        return visitor.visit(*this);
-    }
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -398,7 +401,7 @@ public:
         : left(std::move(l)), op(o), right(std::move(r)) {}
 
     llvm::Type* getType();
-    llvm::Value* accept(LLVMCodeGenVisitor& visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -409,7 +412,7 @@ public:
     ReturnNode(std::unique_ptr<ASTNode> retVal)
         : returnValue(std::move(retVal)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR;
     const ASTNode* getReturnValue() const {
         return returnValue.get();
     }
@@ -425,7 +428,7 @@ public:
     IfNode(std::unique_ptr<ASTNode> cond, std::unique_ptr<ASTNode> thenB, std::unique_ptr<ASTNode> elseB)
         : condition(std::move(cond)), thenBlock(std::move(thenB)), elseBlock(std::move(elseB)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -437,7 +440,7 @@ public:
     WhileNode(std::unique_ptr<ASTNode> cond, std::unique_ptr<ASTNode> b)
         : condition(std::move(cond)), body(std::move(b)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 
@@ -451,7 +454,7 @@ public:
     ForNode(std::unique_ptr<VariableDeclarationNode> init, std::unique_ptr<BinaryExpressionNode> cond, std::unique_ptr<BinaryExpressionNode> incr, std::unique_ptr<BlockNode> b)
         : initializer(std::move(init)), condition(std::move(cond)), increment(std::move(incr)), body(std::move(b)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 class AssignmentNode : public ASTNode {
@@ -462,7 +465,7 @@ public:
     AssignmentNode(const std::string &varName, std::unique_ptr<BinaryExpressionNode> expr)
         : variableName(varName), expression(std::move(expr)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 class BlockNode : public ASTNode {
@@ -472,7 +475,7 @@ public:
     BlockNode(std::vector<std::unique_ptr<ASTNode>> stmts)
         : statements(std::move(stmts)) {}
 
-    llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
+    DECLARE_ACCEPT_VISITOR
 };
 
 

@@ -20,6 +20,7 @@ class IsaParser {
     bool err = false;
 
     void advanceToken() { countertoken++; }
+    void returnToken() { countertoken--; }
     bool isAtEnd() const { return getToken().type == TOK_EOF; }
 
     Token getToken() const { return tokens[countertoken]; }
@@ -86,6 +87,11 @@ class IsaParser {
             case TOK_STRUCT:    error("Struct declaration not supported yet"); break;
             case TOK_IF:        error("If statement not supported yet"); break;
             case TOK_WHILE:     error("While statement not supported yet"); break;
+
+            case TOK_EXTERN:    {
+                advanceToken();
+                return parserFunctionDeclaration(true);
+            }
             default:
                 error("Invalid declaration.");
         }
@@ -94,12 +100,13 @@ class IsaParser {
     }
     std::unique_ptr<ASTNode> matchDeclaration(Token type) {
         switch (getToken().type) {
-            case TOK_LET:       return matchVariableDeclaration();
-            case TOK_FN:        return parserFunctionDeclaration();
-            case TOK_STRUCT:    error("Struct declaration not supported yet"); break;
-            case TOK_IF:        error("If statement not supported yet"); break;
-            case TOK_WHILE:     error("While statement not supported yet"); break;
-            case TOK_RETURN:    return parserReturn(type);
+            case TOK_LET:           return matchVariableDeclaration();
+            case TOK_FN:            return parserFunctionDeclaration();
+            case TOK_STRUCT:        error("Struct declaration not supported yet"); break;
+            case TOK_IF:            error("If statement not supported yet"); break;
+            case TOK_WHILE:         error("While statement not supported yet"); break;
+            case TOK_RETURN:        return parserReturn(type);
+            case TOK_IDENTIFIER:    return parserCallFunction();
             default:
                 error("Invalid declaration.");
         }
@@ -108,7 +115,7 @@ class IsaParser {
     }
 
 
-    std::unique_ptr<ASTNode> parserFunctionDeclaration() {
+    std::unique_ptr<ASTNode> parserFunctionDeclaration(bool externFunc = false) {
         Token identifier;
         Token returnType;
         
@@ -126,7 +133,7 @@ class IsaParser {
         else error("Expected return type");
 
         if (match(TOK_SEMICOLON)) {
-            return std::make_unique<FunctionInstantiationNode>(identifier.value, returnType.value, std::move(parameters));
+            return std::make_unique<FunctionInstantiationNode>(identifier.value, returnType.value, std::move(parameters), externFunc);
         } else if (match(TOK_LBRACE)) {
             auto body = parseStatementList(returnType);
             //std::make_unique<ReturnNode>(std::make_unique<IntegerLiteralNode>("i32", 0));
@@ -181,10 +188,36 @@ class IsaParser {
             
             if (check(TOK_TYPE)) type = consume(TOK_TYPE);
             else error("Expected type after ':'");
-
             parameters.push_back(std::make_unique<VariableDeclarationNode>(identifier.value, type.value));
         } while (match(TOK_COMMA));
         return parameters;
+    }
+
+    std::vector<std::unique_ptr<ASTNode>> parseParameterListCallFunction() {
+        std::vector<std::unique_ptr<ASTNode>> parameters;
+        if (check(TOK_RPAREN)) return parameters;
+        
+        do {
+            Token identifier;
+            if (check(TOK_IDENTIFIER)) identifier = consume(TOK_IDENTIFIER);
+            else error("Expected identifier");
+            
+            parameters.push_back(std::make_unique<VariableValueNode>(identifier.value));
+        } while (match(TOK_COMMA));
+        return parameters;
+    }
+
+    std::unique_ptr<FunctionCallNode> parserCallFunction() {
+        Token identifier;
+        if(check(TOK_IDENTIFIER)) identifier = consume(TOK_IDENTIFIER);
+        if (!match(TOK_LPAREN)) error("Expected '(' after function name");
+
+        auto parameters = parseParameterListCallFunction();
+        if (!match(TOK_RPAREN)) error("Expected ')' after parameters");
+
+        if(match(TOK_SEMICOLON)) return std::make_unique<FunctionCallNode>(identifier.value,std::move(parameters));
+        else error("Expected ';' after return statement");
+        return nullptr;
     }
 
     std::unique_ptr<VariableDeclarationNode> matchVariableDeclaration() {
@@ -206,7 +239,6 @@ class IsaParser {
                 return std::make_unique<VariableDeclarationNode>(identifier.value, typeToken.value, std::move(initializer));
             else error("Expected ';' after variable declaration");
         } else if (match(TOK_SEMICOLON)) {
-            std::cout << identifier.value;
             return std::make_unique<VariableDeclarationNode>(identifier.value, typeToken.value, nullptr);
         } else {
             error("Expected ';' after variable declaration");
@@ -244,7 +276,11 @@ class IsaParser {
             return std::make_unique<IntegerLiteralNode>(previous().value);
         }
         if (match(TOK_IDENTIFIER)) {
-            return std::make_unique<VariableReferenceNode>(previous().value,type.value);
+            if(check(TOK_LPAREN)) {
+                returnToken();
+                return parserCallFunction();
+            }
+            else return std::make_unique<VariableReferenceNode>(previous().value,type.value);
         }
         if (match(TOK_STRING_LITERAL)) {
             return std::make_unique<StringLiteralNode>(previous().value, type.value, true);
@@ -254,7 +290,7 @@ class IsaParser {
             if (!match(TOK_RPAREN)) error("Expected ')' after expression");
             return expr;
         }
-        throw std::runtime_error("Unexpected expression");
+        return nullptr;
     }
 
 public:
@@ -273,261 +309,3 @@ public:
 };
 
 #endif
-
-
-/*
-    std::unique_ptr<VariableDeclarationNode> matchVariableDeclaration() {
-        if (match(TOK_LET)) {
-            if (match(TOK_COLON)) {
-                if (matchType()) {
-                    auto type = getToken().value;
-                    if (match(TOK_IDENTIFIER)) {
-                        auto identifier = getToken().value;
-                        if (match(TOK_ASSIGN)) {
-                            if(matchExpression()){
-                                
-                            }
-                            else if (match(TOK_SEMICOLON)) {
-                                // return std::make_unique<VariableDeclarationNode>(...);
-                                //return true;
-                            } else {
-                                Error(ErrorType::SyntaxError,"Expected 'var name' statement",getToken().line,getToken().column, filename).printError(errors);
-                            }
-                        } else if (match(TOK_SEMICOLON)) {
-                            // return std::make_unique<VariableDeclarationNode>(...);
-                            //return true;
-                        } else {
-                            Error(ErrorType::SyntaxError,"Expected ';' statement",getToken().line,getToken().column, filename).printError(errors);
-                        }
-                    } else {
-                        Error(ErrorType::SyntaxError,"Expected 'var name' statement",getToken().line,getToken().column, filename).printError(errors);
-                    }
-                } else {
-                    Error(ErrorType::SyntaxError,"Expected 'type' statement",getToken().line,getToken().column, filename).printError(errors);
-                }
-            } else {
-                Error(ErrorType::SyntaxError,"Expected ':' statement",getToken().line,getToken().column, filename).printError(errors);
-            }
-        } else if(match(TOK_IDENTIFIER)) {
-            Error(ErrorType::SyntaxError,"Expected 'var name' statement",getToken().line,getToken().column, filename).printError(errors);
-        }
-        return nullptr;
-    }
-
-     std::unique_ptr<FunctionNode> matchFunctionDeclaration() {
-        if (match(TOK_FN)) {
-            if (match(TOK_IDENTIFIER)) {
-                if (match(TOK_LPAREN)) {
-                    matchParameterList();
-                    if (match(TOK_RPAREN)) {
-                        if (match(TOK_ARROW)) {
-                            if (matchType()) {
-                                if (match(TOK_LBRACE)) {
-                                    // parseStatementList();
-                                    if (match(TOK_RBRACE)) {
-                                        // return std::make_unique<FunctionNode>(...);
-                                        //return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        //return false;
-    }
-
-     std::unique_ptr<StructDeclarationNode> matchStructDeclaration() {
-        if (match(TOK_STRUCT)) {
-            if (match(TOK_IDENTIFIER)) {
-                if (match(TOK_LBRACE)) {
-                    matchStructMemberList();
-                    if (match(TOK_RBRACE)) {
-                        matchConstructor();
-                        // return std::make_unique<StructDeclarationNode>(...);
-                        return nullptr;
-                    }
-                }
-            }
-        }
-        return nullptr;
-    }
-
-    bool matchType() {
-        return match(TOK_TYPE);
-    }
-
-    void matchParameterList() {
-        if (matchParameter()) {
-            while (match(TOK_COMMA)) {
-                matchParameter();
-            }
-        }
-    }
-
-    bool matchParameter() {
-        if (matchType()) {
-            return match(TOK_IDENTIFIER);
-        }
-        return false;
-    }
-
-    void matchStructMemberList() {
-        while (matchStructMember()) {}
-    }
-
-    bool matchStructMember() {
-        if (match(TOK_LET)) {
-            if (match(TOK_COLON)) {
-                if (matchType()) {
-                    if (match(TOK_IDENTIFIER)) {
-                        if (match(TOK_SEMICOLON)) {
-                            // return std::make_unique<StructMemberNode>(...);
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    bool matchConstructor() {
-        if (match(TOK_FN)) {
-            if (match(TOK_IDENTIFIER)) {
-                if (match(TOK_LPAREN)) {
-                    matchParameterList();
-                    if (match(TOK_RPAREN)) {
-                        if (match(TOK_LBRACE)) {
-                            // parseStatementList();
-                            if (match(TOK_RBRACE)) {
-                                // return std::make_unique<ConstructorNode>(...);
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    bool matchExpression() {
-        return matchLiteral() || matchIdentifier() || matchBinaryExpression() || matchParenthesizedExpression()
-            || matchArrayExpression() || matchStructExpression() || matchFunctionCall()
-            || matchPointerExpression() || matchReferenceExpression();
-    }
-
-    bool matchLiteral() {
-        return match(TOK_INTEGER_LITERAL) || match(TOK_FLOAT_LITERAL) || match(TOK_BOOL_LITERAL) || match(TOK_FLOAT_LITERAL);
-    }
-
-    bool matchIdentifier() {
-        return match(TOK_IDENTIFIER);
-    }
-
-    bool matchBinaryExpression() {
-        if (matchExpression()) {
-            if (matchBinaryOperator()) {
-                return matchExpression();
-            }
-        }
-        return false;
-    }
-
-    bool matchBinaryOperator() {
-        return match(TOK_PLUS) || match(TOK_MINUS) || match(TOK_STAR) || match(TOK_SLASH) 
-            || match(TOK_EQUAL) || match(TOK_NOT_EQUAL) || match(TOK_LT) || match(TOK_GT)
-            || match(TOK_LE) || match(TOK_GE);
-    }
-
-    bool matchParenthesizedExpression() {
-        if (match(TOK_LPAREN)) {
-            if (matchExpression()) {
-                return match(TOK_RPAREN);
-            }
-        }
-        return false;
-    }
-
-    bool matchArrayExpression() {
-        if (match(TOK_LBRACE)) {
-            matchExpressionList();
-            return match(TOK_RBRACE);
-        }
-        return false;
-    }
-
-    void matchExpressionList() {
-        if (matchExpression()) {
-            while (match(TOK_COMMA)) {
-                matchExpression();
-            }
-        }
-    }
-
-    bool matchStructExpression() {
-        if (match(TOK_IDENTIFIER)) {
-            if (match(TOK_LBRACE)) {
-                matchStructFieldList();
-                return match(TOK_RBRACE);
-            }
-        }
-        return false;
-    }
-
-    void matchStructFieldList() {
-        if (matchStructField()) {
-            while (match(TOK_COMMA)) {
-                matchStructField();
-            }
-        }
-    }
-
-    bool matchStructField() {
-        if (match(TOK_IDENTIFIER)) {
-            if (match(TOK_ASSIGN)) {
-                return matchExpression();
-            }
-        }
-        return false;
-    }
-
-    bool matchFunctionCall() {
-        if (match(TOK_IDENTIFIER)) {
-            if (match(TOK_LPAREN)) {
-                matchArgumentList();
-                return match(TOK_RPAREN);
-            }
-        }
-        return false;
-    }
-
-    void matchArgumentList() {
-        if (matchExpression()) {
-            while (match(TOK_COMMA)) {
-                matchExpression();
-            }
-        }
-    }
-
-    bool matchPointerExpression() {
-        if (match(TOK_NEW)) {
-            if (matchType()) {
-                if (match(TOK_LPAREN)) {
-                    matchExpression();
-                    return match(TOK_RPAREN);
-                }
-            }
-        }
-        return false;
-    }
-
-    bool matchReferenceExpression() {
-        if (match(TOK_AMP)) {
-            return match(TOK_IDENTIFIER);
-        }
-        return false;
-    }
-*/

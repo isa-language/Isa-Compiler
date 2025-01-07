@@ -1,11 +1,16 @@
-fn add(a: i32,b: i32) -> i32;
-fn puts(value: i8) -> i32;
+fn add(a: i32,b: i32) -> i32 {
+    return a+a;
+}
+extern fn puts(value: string) -> i32;
 
-fn test_void(nome:i8) -> void;
+fn test_void(nome:string) -> string {
+    return nome;
+}
 
 
 fn main(argc: i16, argv: string) -> i32 {
     let:string test = "olá, mundo!";
+    puts(test);
     let:i16 num = 10;
     let:i32 num2 = 11 + num + 22 / num;
     return 0;

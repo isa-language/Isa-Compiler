@@ -15,6 +15,7 @@ enum TokenType {
     TOK_CASE,
     TOK_DEFAULT,
     TOK_NEW,
+    TOK_EXTERN,
 
     // Types
     TOK_TYPE,
@@ -26,7 +27,6 @@ enum TokenType {
     TOK_STRING_LITERAL,
     TOK_IDENTIFIER,
     TOK_ARRAY,
-
     // Operators and Delimiters
     TOK_ASSIGN,  // '='
     TOK_ARROW,  // ->

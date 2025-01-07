@@ -16,6 +16,7 @@ static const char* tokenStrings[] = {
     "TOK_CASE",
     "TOK_DEFAULT",
     "TOK_NEW",
+    "TOK_EXTERN",
 
     "TOK_TYPE",
 
@@ -25,7 +26,6 @@ static const char* tokenStrings[] = {
     "TOK_STRING_LITERAL",
     "TOK_IDENTIFIER",
     "TOK_ARRAY",
-
     "TOK_ASSIGN",
     "TOK_ARROW",
     "TOK_SEMICOLON",

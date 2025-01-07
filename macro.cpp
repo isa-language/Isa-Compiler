@@ -4,7 +4,7 @@
 #include <indicators/progress_spinner.hpp>
 
 using namespace indicators;
-
+// TESTES 
 int main() {
     indicators::ProgressSpinner spinner{
         option::PostfixText{"Compilando codigo Isa! 😼"},
@@ -25,7 +25,7 @@ int main() {
                 break;
             } else {
                 spinner.tick();
-                progress += 1;  // Simula o progresso
+                progress += 1; 
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
         }

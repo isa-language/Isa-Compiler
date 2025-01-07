@@ -1,0 +1,9 @@
+extern fn puts(a: string) -> i32;
+extern fn printf(a:string) -> i32;
+
+fn main() -> i32 {
+    let:string hello = "Olá, mundo ";
+    printf(hello);
+    puts(hello);
+    return 0;
+}

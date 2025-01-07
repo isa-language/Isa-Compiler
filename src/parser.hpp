@@ -245,7 +245,7 @@ void compiler() {
                 
                 spinner.tick();
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
     
   }
@@ -255,13 +255,13 @@ void compiler() {
   /**
    * Function LLVM Init
    **/
-   void init_all_targets(void) {
+  void init_all_targets() {
         LLVMInitializeAllTargets();
         LLVMInitializeAllTargetInfos();
         LLVMInitializeAllTargetMCs();
         LLVMInitializeAllAsmPrinters();
         LLVMInitializeAllAsmParsers();
-    }
+  }
   void initModuleLLVM() {
     // Inicializar os targets nativos para código JIT
     //llvm::InitializeNativeTarget();

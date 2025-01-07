@@ -199,7 +199,7 @@ Abaixo, um exemplo de código utilizando a gramática descrita:
 ```plaintext
 let: i32 num = 10;
 let: f32 ponto = 0.40;
-let: array[i32, 3] vetor = { 10, 5, 3 };
+let: [i32, 3] vetor = { 10, 5, 3 };
 let: str[10] fixed_str = "Olá, mundo!";
 let: string dynamic_str = "Olá, mundo! Isa";
 let: u8 small_number = 255;

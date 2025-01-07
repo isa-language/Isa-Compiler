@@ -57,7 +57,8 @@ Token Lexer::handleIdentifierOrKeyword() {
     static const std::unordered_map<std::string, TokenType> keywords = {
         {"let", TOK_LET}, {"fn", TOK_FN}, {"struct", TOK_STRUCT}, {"return", TOK_RETURN},
         {"for", TOK_FOR}, {"while", TOK_WHILE}, {"if", TOK_IF}, {"else", TOK_ELSE},
-        {"switch", TOK_SWITCH}, {"case", TOK_CASE}, {"default", TOK_DEFAULT}, {"new", TOK_NEW}
+        {"switch", TOK_SWITCH}, {"case", TOK_CASE}, {"default", TOK_DEFAULT}, {"new", TOK_NEW},
+        {"extern", TOK_EXTERN},
     };
 
     auto it = keywords.find(value);
@@ -69,7 +70,7 @@ Token Lexer::handleIdentifierOrKeyword() {
         {"i8", TOK_TYPE}, {"i16", TOK_TYPE}, {"i32", TOK_TYPE}, {"i64", TOK_TYPE},
         {"u8", TOK_TYPE}, {"u16", TOK_TYPE}, {"u32", TOK_TYPE}, {"u64", TOK_TYPE},
         {"f8", TOK_TYPE}, {"f16", TOK_TYPE}, {"f32", TOK_TYPE}, {"f64", TOK_TYPE},
-        {"bool", TOK_TYPE}, {"string", TOK_TYPE}, {"array", TOK_TYPE},{"void", TOK_TYPE}
+        {"bool", TOK_TYPE}, {"string", TOK_TYPE}, {"array", TOK_TYPE},{"void", TOK_TYPE}, 
     };
 
     it = types.find(value);

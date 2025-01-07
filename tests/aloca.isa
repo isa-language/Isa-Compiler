@@ -1,0 +1,44 @@
+using @import "core.memory"
+let:box std =  memory.box();
+@continua(Arena)
+@subcontext() // garante uma nova pilha de arena para essa sassão que sera liberada no final dessa função! 
+//a macro @subcontext() é opcinal. caso nao seja executada, tudo que for gerado aqui só sera desalocado ao final do contexto da stdmem.
+fn exemple(aloc:box&) -> i32& { // o aloc deve ser uma referencia imultavel! somente charmar funçoes para alocação como o allocate, nao sera possivel a deleção do allocator!
+    // o allocate sera o da função main o que implicarar que tudo que for alocado pelo allocate, sora terar fim no final
+    let: i32& allocdynamic = std.dynamic<_>(30); // isso esta sobre a regra de ownership e borrowing 
+    let: i32& allocarenas = aloc.allocate<_>(10);
+    let: i32& result = std.dynamic<_>(allocdynamic+allocarenas);
+    return result // estarei passando a posse para quem ira receber! caso a função nao tenha variavel de retorno. sera desalocado (com um warning de aviso!)
+}
+
+
+@lifetime(Arena) // Essa macro diz que o modo de arena esta ativo nessa sessão, sem ela o allocate nao poderia ser usado. podendo ser passado para outros spoocos.
+fn main() -> i32 {
+    { // ao final desse cotexto o arena sera liberado 
+        let:Arn arena = memory.arn(); // um conteiner que tem todos os metodos de alocação de memoria 
+        let: i32& x = arena.allocate<_>();  // Aloca inteiro na arena
+        x = 42;
+        let: i64& alloc_dynamic = std.dynamic<_>(); // ownership e borrowing 
+        // let: i64& transfer = alloc_dynamic; // isso é permitido! !ERROR
+        let: i64& transfer = &alloc_dynamic; // isso é! uma referencia imutavel!
+        transfer = alloc_dynamic.transection(); // Agora pertence ao transfer! agora o alloc_dynamic enta nullptr
+        // todos os ponteiros vao ter metadados com informaçoes relevante, e serão inteligentes 
+        transfer.destroy(); // eliminar o elemento e deixara o acesso ao ponteiro invalido! nullptr
+        // Caso o destroy nao seja chamado. ao final do scoop, o objeto sera liberado da memoria! Respeitando a vida de quem tem a posse do elemento 
+        println("{}", transfer); // error de acesso pelo compilador !ERROR
+        
+        {
+            let: i32& y = arena.allocate<_>();
+            y = 50;
+
+            let: i32& z = y;  // Emprestimo permitido (dentro do escopo da arena)
+            println("{}", z);
+        }  // Subescopo interno termina, `y` ainda valido porque é parte da arena.
+
+        println("{}", x);  // Valido, `x` ainda está no escopo da arena
+    }  // Arena desalocada, `x` e `y` não podem mais ser usados.
+
+        // O allocate só pode ser usado na inicialização da variave.
+        // caso queira usa fora de sua anicialização, deverar usar o dynamic e nao pode haver nenhum objeto sobre sua posse. só sera possivel se for uma referencia imutavel!
+    return 0;
+}

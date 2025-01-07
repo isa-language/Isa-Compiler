@@ -2,72 +2,28 @@
 #include "parser.hpp"
 #include <llvm/IR/Value.h>
 
-llvm::Value* VariableDeclarationNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
+#define DEFINE_ACCEPT_METHOD(NodeType) \
+llvm::Value* NodeType::accept(LLVMCodeGenVisitor &visitor) { \
+    return visitor.visit(*this); \
 }
 
-llvm::Value* StructDeclarationNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-
-llvm::Value* FunctionNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-llvm::Value* FunctionInstantiationNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-llvm::Value* BinaryExpressionNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-
-llvm::Value* ReturnNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-
-llvm::Value* IfNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-
-llvm::Value* WhileNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-
-llvm::Value* ForNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-
-llvm::Value* IntegerLiteralNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-llvm::Value* StringLiteralNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-llvm::Value* StructInstantiationNode::accept(LLVMCodeGenVisitor &visitor) {
-        return visitor.visit(*this);
-}
-llvm::Value* VariableReferenceNode::accept(LLVMCodeGenVisitor &visitor) {
-        return visitor.visit(*this);
-}
-
-llvm::Value* ExpressionStatementNode::accept(LLVMCodeGenVisitor &visitor) {
-        return visitor.visit(*this);
-}
-llvm::Value* Bitcast::accept(LLVMCodeGenVisitor &visitor) {
-        return visitor.visit(*this);
-}
-llvm::Value* FunctionCallNode::accept(LLVMCodeGenVisitor &visitor) {
-        return visitor.visit(*this);
-}
-llvm::Value* AssignmentNode::accept(LLVMCodeGenVisitor &visitor) {
-        return visitor.visit(*this);
-}
-llvm::Value* BlockNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-llvm::Value* ArrayTypeNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
-
-llvm::Value* VariableValueNode::accept(LLVMCodeGenVisitor &visitor) {
-    return visitor.visit(*this);
-}
+DEFINE_ACCEPT_METHOD(VariableDeclarationNode)
+DEFINE_ACCEPT_METHOD(StructDeclarationNode)
+DEFINE_ACCEPT_METHOD(FunctionNode)
+DEFINE_ACCEPT_METHOD(FunctionInstantiationNode)
+DEFINE_ACCEPT_METHOD(BinaryExpressionNode)
+DEFINE_ACCEPT_METHOD(ReturnNode)
+DEFINE_ACCEPT_METHOD(IfNode)
+DEFINE_ACCEPT_METHOD(WhileNode)
+DEFINE_ACCEPT_METHOD(ForNode)
+DEFINE_ACCEPT_METHOD(IntegerLiteralNode)
+DEFINE_ACCEPT_METHOD(StringLiteralNode)
+DEFINE_ACCEPT_METHOD(StructInstantiationNode)
+DEFINE_ACCEPT_METHOD(VariableReferenceNode)
+DEFINE_ACCEPT_METHOD(ExpressionStatementNode)
+DEFINE_ACCEPT_METHOD(Bitcast)
+DEFINE_ACCEPT_METHOD(FunctionCallNode)
+DEFINE_ACCEPT_METHOD(AssignmentNode)
+DEFINE_ACCEPT_METHOD(BlockNode)
+DEFINE_ACCEPT_METHOD(ArrayTypeNode)
+DEFINE_ACCEPT_METHOD(VariableValueNode)
