@@ -1,9 +1,17 @@
+// ola
+/* ola como vc esta 
+gostaria de saber seu nome*/
+
+/* test */
 extern fn puts(a: string) -> i32;
 extern fn printf(a:string) -> i32;
 
-fn main() -> i32 {
-    let:string hello = "Olá, mundo ";
-    printf(hello);
+
+fn add(a: i32, b: i32) -> i32 {
+    return a+b;
+}
+fn main(argc: i32, argv: string) -> i32 {
+    let: string hello = "Se fuder!";
+    let: i8 num = 10 + 11 * 20 - 20 / 2;
     puts(hello);
-    return 0;
 }

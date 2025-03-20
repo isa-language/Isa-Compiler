@@ -1,0 +1,22 @@
+@import "isa.core"
+
+pub type System {
+    i32: sys,
+    str: _name
+}
+
+
+// struct or type
+
+
+impl System {
+    fn novo(sys: i32, _name: str) -> System {
+
+    }
+}
+
+fn main(argc: i32, argv: str) -> i32 {
+    let i32 value = 21;
+    let number_auto := 10;
+    let System sys = new System();
+}

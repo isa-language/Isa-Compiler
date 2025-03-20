@@ -29,6 +29,8 @@ private:
 
     void handleWhitespace();
     Token handleIdentifierOrKeyword();
+    void handleComents();
+    void handleBlockComents();
     Token handleNumber();
     Token handleStringLiteral();
     Token handleOperatorOrDelimiter();

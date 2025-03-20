@@ -18,40 +18,27 @@
 #include <memory>
 
 
-llvm::Type* LLVMCodeGenVisitor::getLLVMTypeFromASTType(const std::string& type) {
-    if (type == "i8")       return llvm::Type::getInt8Ty(*context);
-    else if (type == "i16") return llvm::Type::getInt16Ty(*context);
-    else if (type == "i32") return llvm::Type::getInt32Ty(*context);
-    else if (type == "i64") return llvm::Type::getInt64Ty(*context);
-    else if (type == "u8")  return llvm::Type::getInt8PtrTy(*context, true);
-    else if (type == "u16")  return llvm::Type::getInt16PtrTy(*context, true);
-    else if (type == "u32") return llvm::Type::getInt32PtrTy(*context, true);
-    else if (type == "u64")  return llvm::Type::getInt64PtrTy(*context, true);
-    else if (type == "f16") return llvm::Type::getHalfTy(*context);
-    else if (type == "f32") return llvm::Type::getFloatTy(*context);
-    else if (type == "f64") return llvm::Type::getDoubleTy(*context);
-    else if (type == "void") return llvm::Type::getVoidTy(*context);
-    else if (type == "string") return llvm::Type::getInt8PtrTy(*context);
-    else if (type == "[i8]") return llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), 5);
-    return nullptr;
-}
-
 llvm::Type* LLVMCodeGenVisitor::getLLVMType(const std::string &type) {
-    if (type == "i8")       return llvm::Type::getInt8Ty(*context);
-    if (type == "i8*")      return llvm::Type::getInt8PtrTy(*context);
-    if (type == "i16")      return llvm::Type::getInt16Ty(*context);
-    if (type == "i32")      return llvm::Type::getInt32Ty(*context);
-    if (type == "i64")      return llvm::Type::getInt64Ty(*context);
-    if (type == "u8")       return llvm::Type::getInt8PtrTy(*context, true);
-    if (type == "u16")      return llvm::Type::getInt16PtrTy(*context, true);
-    if (type == "u32")      return llvm::Type::getInt32PtrTy(*context, true);
-    if (type == "u64")      return llvm::Type::getInt64PtrTy(*context, true);
-    if (type == "f16")      return llvm::Type::getHalfTy(*context);
-    if (type == "f32")      return llvm::Type::getFloatTy(*context);
-    if (type == "f64")      return llvm::Type::getDoubleTy(*context);
-    if (type == "bool")     return llvm::Type::getInt1Ty(*context);
-    if (type == "void") return llvm::Type::getVoidTy(*context);
-    if (type == "string")   return llvm::Type::getInt8PtrTy(*context);
+    static const std::unordered_map<std::string, std::function<llvm::Type*(llvm::LLVMContext&)>> baseTypes = {
+        {"i8",  [](llvm::LLVMContext &ctx) { return llvm::Type::getInt8Ty(ctx); }},
+        {"i16", [](llvm::LLVMContext &ctx) { return llvm::Type::getInt16Ty(ctx); }},
+        {"i32", [](llvm::LLVMContext &ctx) { return llvm::Type::getInt32Ty(ctx); }},
+        {"i64", [](llvm::LLVMContext &ctx) { return llvm::Type::getInt64Ty(ctx); }},
+        {"f16", [](llvm::LLVMContext &ctx) { return llvm::Type::getHalfTy(ctx); }},
+        {"f32", [](llvm::LLVMContext &ctx) { return llvm::Type::getFloatTy(ctx); }},
+        {"f64", [](llvm::LLVMContext &ctx) { return llvm::Type::getDoubleTy(ctx); }},
+        {"bool", [](llvm::LLVMContext &ctx) { return llvm::Type::getInt1Ty(ctx); }},
+        {"void", [](llvm::LLVMContext &ctx) { return llvm::Type::getVoidTy(ctx); }},
+        {"string", [](llvm::LLVMContext &ctx) { return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0); }}
+    };
+
+    if (baseTypes.count(type)) {
+        return baseTypes.at(type)(*context);
+    }
+
+    if (type.rfind("u", 0) == 0 && baseTypes.count("i" + type.substr(1))) {
+        return llvm::PointerType::get(baseTypes.at("i" + type.substr(1))(*context), 0);
+    }
 
     if (type.rfind("str[", 0) == 0) {
         size_t start = type.find('[') + 1;
@@ -60,86 +47,52 @@ llvm::Type* LLVMCodeGenVisitor::getLLVMType(const std::string &type) {
         return llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), length);
     }
 
-    if (type.rfind("[", 0) == 0) {
-        size_t start = type.find('[') + 1;
+    if (type.front() == '[') {
+        size_t start = 1;
         size_t comma = type.find(',');
         size_t end = type.find(']');
-
         std::string elementType = type.substr(start, comma - start);
         int arraySize = std::stoi(type.substr(comma + 1, end - comma - 1));
-
         llvm::Type* llvmElementType = getLLVMType(elementType);
-        if (llvmElementType) {
-            return llvm::ArrayType::get(llvmElementType, arraySize);
-        }
+        return llvmElementType ? llvm::ArrayType::get(llvmElementType, arraySize) : nullptr;
     }
 
-
-    if (type.back() == '*') {
+    if (type.back() == '*' || type.back() == '&') {
         std::string baseType = type.substr(0, type.size() - 1);
         llvm::Type* llvmBaseType = getLLVMType(baseType);
-        if (llvmBaseType) {
-            return llvmBaseType->getPointerTo();
-        }
+        return llvmBaseType ? llvm::PointerType::get(llvmBaseType, 0) : nullptr;
     }
 
-    if (type.back() == '&') {
-        std::string baseType = type.substr(0, type.size() - 1);
-        llvm::Type* llvmBaseType = getLLVMType(baseType);
-        if (llvmBaseType) {
-            return llvmBaseType->getPointerTo();  
-        }
-    }
-
-
-    module->getIdentifiedStructTypes();
-   if (type == "struct") {
-        std::vector<llvm::StructType*> identifiedStructs = module->getIdentifiedStructTypes();
-        for (auto *structType : identifiedStructs) {
-    if (structType->hasName()) {
-            std::cout << "Identified struct: " << structType->getName().str() << std::endl;
-        }
-    }
-        return nullptr;
+    if (type.rfind("struct", 0) == 0) {
+        return llvm::StructType::getTypeByName(*context, type);
     }
 
     return nullptr;
 }
+
 llvm::Value* LLVMCodeGenVisitor::getInitValueForType(const std::string &type) {
-    if (type == "i32") {
-        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
-    } else if (type == "f32") {
-        return llvm::ConstantFP::get(llvm::Type::getFloatTy(*context), 0.0);
-    } else if (type == "u8") {
-        return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), 0);
-    } else if (type == "u32") {
-        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
-    } else if (type == "str") {
-        return llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*context));
-    } else if (type == "string") {
-        return llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*context));
-    } else if (type.find("array[") == 0) {
-        size_t startPos = type.find('[') + 1;
-        size_t endPos = type.find(',', startPos);
-        std::string elementType = type.substr(startPos, endPos - startPos);
-        size_t arraySize = std::stoi(type.substr(endPos + 1, type.find(']') - endPos - 1));
+    llvm::Type* llvmType = getLLVMType(type);
+    if (!llvmType) return nullptr;
 
-        llvm::Type* llvmElementType = getLLVMType(elementType);
-        std::vector<llvm::Constant*> initialValues;
-        for (size_t i = 0; i < arraySize; ++i) {
-            initialValues.push_back(static_cast<llvm::Constant*>(getInitValueForType(elementType)));
-        }
-        return llvm::ConstantArray::get(llvm::ArrayType::get(llvmElementType, arraySize), initialValues);
-    } else if (type == "i8*") {
-        return llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*context));
-    } else if (type == "i32*") {
-        return llvm::ConstantPointerNull::get(llvm::Type::getInt32PtrTy(*context));
-    } else if (type == "void") {
-        return nullptr;
+    if (llvmType->isIntegerTy()) {
+        return llvm::ConstantInt::get(llvmType, 0);
+    }
+    if (llvmType->isFloatingPointTy()) {
+        return llvm::ConstantFP::get(llvmType, 0.0);
+    }
+    if (llvmType->isPointerTy()) {
+        return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(llvmType));
+    }
+    if (llvmType->isArrayTy()) {
+        llvm::ArrayType* arrayType = llvm::cast<llvm::ArrayType>(llvmType);
+        llvm::Type* elementType = arrayType->getElementType();
+        std::vector<llvm::Constant*> elements(arrayType->getNumElements(), static_cast<llvm::Constant*>(getInitValueForType(type.substr(1, type.find(',') - 1))));
+        return llvm::ConstantArray::get(arrayType, elements);
     }
 
     return nullptr;
 }
+
 
 void LLVMCodeGenVisitor::addVariable(const std::string &name, llvm::Value *value) {
     variables[name] = value;
@@ -288,7 +241,7 @@ llvm::Value* LLVMCodeGenVisitor::visit(StringLiteralNode &node) {
         stringVar->setInitializer(initializer);
 
 
-        llvm::Value *bitcastedStr = builder->CreateBitCast(stringVar, llvm::Type::getInt8PtrTy(*context));
+        llvm::Value *bitcastedStr = builder->CreateBitCast(stringVar, llvm::Type::getInt8Ty(*context)->getPointerTo());
 
         return bitcastedStr;
     } else {

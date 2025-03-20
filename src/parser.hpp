@@ -22,7 +22,7 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
-#include <llvm/Support/Host.h>
+//#include <llvm/Support/Host.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/Error.h>
 #include <llvm/TargetParser/Host.h> 
@@ -86,9 +86,10 @@ class IsaLLVM {
   void exec(std::vector<std::unique_ptr<ASTNode>> program) {
     
     compiler(std::move(program));
-    module->print(llvm::outs(), nullptr);
+
+    //module->print(llvm::outs(), nullptr);
     salveModuleFile("out.ll");
-    generateExecutable("out.o");
+    //generateExecutable("out.o");
   }
 /*
   void exec(std::vector<std::unique_ptr<ASTNode>> program, const std::string& filename) {
@@ -111,7 +112,7 @@ void compiler() {
     std::vector<std::unique_ptr<ASTNode>> program;
     std::vector<std::unique_ptr<VariableDeclarationNode>> printlnpar;
     printlnpar.push_back(std::make_unique<VariableDeclarationNode>("str", "string", std::make_unique<StringLiteralNode>("\"\\n\"")));
-    auto printfDecl = std::make_unique<FunctionInstantiationNode>("println", "void", std::move(printlnpar), true);
+    auto printfDecl = std::make_unique<FunctionInstantiationNode>("printf", "i32", std::move(printlnpar), true);
     program.push_back(std::move(printfDecl));
 
     std::unique_ptr<FunctionNode> function; 
@@ -121,7 +122,7 @@ void compiler() {
     functionParams.push_back(std::make_unique<VariableDeclarationNode>("argv", "string"));
 
     std::vector<std::unique_ptr<ASTNode>> functionBody;
-
+    
     functionBody.push_back(std::make_unique<VariableDeclarationNode>("format", "string", std::make_unique<StringLiteralNode>("Olá, mundo Isa", "format", true)));
     std::vector<std::unique_ptr<ASTNode>> printlnArgs;
     auto formatExpr = std::make_unique<VariableValueNode>("format", "string");
@@ -327,7 +328,7 @@ void compiler() {
 
     // Configurar o pass manager para gerar o binário
     llvm::legacy::PassManager passManager;
-    if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile)) {
+    if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CodeGenFileType::ObjectFile)) {
         llvm::errs() << "O alvo não suporta a geração de código objeto!\n";
         return;
     }

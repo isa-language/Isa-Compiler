@@ -110,7 +110,6 @@ public:
 
   
   llvm::Type* getLLVMType(const std::string &type);
-  llvm::Type* getLLVMTypeFromASTType(const std::string &type);
   llvm::Value* getInitValueForType(const std::string &type);
   llvm::Value* lookupVariable(const std::string &name);
   llvm::Value* getVariable(const std::string &name);
@@ -122,6 +121,7 @@ public:
     llvm::Value* accept(LLVMCodeGenVisitor &visitor) override;
 
 enum class NodeType { Function, Allocation, Transaction, Borrow, OwnershipTransfer };
+
 class ASTNode {
 public:
     virtual ~ASTNode() = default;

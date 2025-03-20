@@ -20,6 +20,10 @@ std::vector<Token> Lexer::tokenize() {
 
         if (isspace(currentChar)) {
             handleWhitespace();
+        } else if (currentChar == '/' && ((position + 1 < source.size()) ? source[position+1] == '/' : false) ) {
+            handleComents();
+        } else if (currentChar == '/' && ((position + 1 < source.size()) ? source[position+1] == '*' : false) ) {
+            handleBlockComents();
         } else if (isalpha(currentChar) || currentChar == '_') {
             tokens.push_back(handleIdentifierOrKeyword());
         } else if (isdigit(currentChar)) {
@@ -111,6 +115,27 @@ Token Lexer::handleStringLiteral() {
     column++;
     return Token(TOK_STRING_LITERAL, value, line, startColumn);
 }
+
+void Lexer::handleComents() {
+    position++; 
+    while (position < source.length() && source[position] != '\n') {
+        position++;
+    }
+    position++; 
+}
+
+void Lexer::handleBlockComents() {
+    position++; 
+    while (position < source.length()) {
+        if(source[position] == '*' && source[position+1] == '/') {
+            position++; 
+            break;
+        };
+        position++;
+    }
+    position++; 
+}
+
 
 Token Lexer::handleOperatorOrDelimiter() {
     int startColumn = column;

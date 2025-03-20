@@ -1,0 +1,14 @@
+
+extern fn printf(value:string) -> i32;
+
+
+fn print(value:string) -> void {
+    printf(value);
+}
+
+fn main() -> i32 {
+    let:string msg = "Olá, mundo!";
+    //print(msg);
+    printf(msg);
+    return 0;
+}
