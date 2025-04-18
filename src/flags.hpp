@@ -58,4 +58,3 @@ static std::vector<bool> flags(int argc, char **argv) {
 } 
 
 #endif // !FLAGS_DATABASE
-

@@ -29,6 +29,19 @@ static std::vector<std::string> splitByErr(const std::string& str) {
     return columns;
 }
 
+static std::string splitByStr(const std::string& str) {
+    std::vector<std::string> columns;
+    std::stringstream ss(str);
+    std::string item;
+    std::string env;
+
+    while (std::getline(ss, item, '\n')) {
+        env += removeSpaces(item) + '\n';
+    }
+
+    return env;
+}
+
 static std::string fileopen(const std::string& filename) {
     std::fstream fs(filename, std::fstream::in);
     std::stringstream ss;

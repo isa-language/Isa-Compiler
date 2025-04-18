@@ -1,0 +1,18 @@
+@import "core.std"
+
+class Pessoa {
+    nome: string,
+    altura: u8
+}
+
+class Paciente extends Pessoa {
+    numero: i32,
+    pub impl (nome: string, altura: u8, numero: i32) : this-> nome, idade, numero {}
+
+    pub get_name() { name; }
+}
+
+fn main() {
+    let: Pessoa pessoa = new Pessoa("Pessoa", 170, 453);
+    println(get_name());
+}

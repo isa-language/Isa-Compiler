@@ -1,0 +1,29 @@
+@import (
+    "core.alloc",
+    "core.std"
+    )
+
+struct Vec3 {
+    x: f32,
+    x: f32,
+    y: f32,
+}
+
+type interfaces vec_{
+    fn vec_soma(&self) -> f32 {
+        self.x + self.y + self.z; 
+    };
+}
+
+impl vec : Vec3 {
+    fn vec_mult(&self) -> f32 {
+        self.x * self.y * self.z; 
+    }
+}
+
+fn main() {
+    let: arena = ArenaAllocator::new();
+    let: Handle<Vec3> vec3 = arena.alloc(Vect3 { .x = 3.0, .y = 5.4, .y = 4.0});
+
+    println(vec3.vec_mult());
+}

@@ -1,6 +1,14 @@
 **/build
 **/.vscode
-**/src/backup
+**/src/Isa_dialect/*.td
 /test.cpp
 /Makefile
 /macro.cpp
+/compile_commands.json
+.env
+/nametoken.hpp
+**/Isa_dialect
+**/tablegen
+**/dialect
+**/doc
+**/.cache

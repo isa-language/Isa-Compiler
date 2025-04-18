@@ -4,6 +4,7 @@
  * */
 
 #pragma once
+#include "frontend/lexer/token.hpp"
 #include <vector>
 #ifndef IsaLLVM_ERR
 #define IsaLLVM_ERR
@@ -19,14 +20,14 @@ struct Error {
   ErrorType type;
   std::string message;
   int line;
-  int colunm;
+  int column;
   std::string filename;
 
   Error(ErrorType type, const std::string& message, 
-        int line, int colunm, std::string filename) : type(type), message(message), line(line), 
-                                                      colunm(colunm), filename(filename) {}
+        int line, int column, std::string filename) : type(type), message(message), line(line), 
+        column(column), filename(filename) {}
 
-  void printError(const std::vector<std::string> codes);
+  void printError(const std::vector<Token> codes);
 };
 
 

@@ -1,0 +1,24 @@
+
+
+
+@macro repeat(times, code) {
+    for (let: i32 i = 0; i < times; i++) {
+        code;
+    }
+}
+
+fn main() {
+    repeat(5, println("Repetindo..."));
+}
+
+
+/*
+codigo gerado
+fn main() {
+    println("Repetindo...");
+    println("Repetindo...");
+    println("Repetindo...");
+    println("Repetindo...");
+    println("Repetindo...");
+}
+*/

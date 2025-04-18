@@ -8,6 +8,7 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -315,7 +316,7 @@ public:
 
     FunctionNode(const std::string &name, const std::string &retType, std::vector<std::unique_ptr<VariableDeclarationNode>> params, 
                  std::vector<std::unique_ptr<ASTNode>> body, const std::string &structName, bool isMethod = false, bool isConstructor = false)
-        : functionName(name), returnType(retType), isMethod(isMethod), isConstructor(isConstructor), associatedStruct(structName), 
+        : functionName(name), returnType(retType), isConstructor(isConstructor), isMethod(isMethod), associatedStruct(structName), 
           parameters(std::move(params)), functionBody(std::move(body)) {}
 
     FunctionNode(const std::string &name, const std::string &retType)

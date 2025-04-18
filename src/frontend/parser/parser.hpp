@@ -6,7 +6,7 @@
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
 #include <llvm/MC/TargetRegistry.h>
-#include "token.hpp"
+#include "frontend/lexer/token.hpp"
 #include <iostream>
 #include <utility>
 /* includes header LLVM */
@@ -88,7 +88,7 @@ class IsaLLVM {
     compiler(std::move(program));
 
     //module->print(llvm::outs(), nullptr);
-    salveModuleFile("out.ll");
+    saveModuleFile("out.ll");
     //generateExecutable("out.o");
   }
 /*
@@ -256,112 +256,108 @@ void compiler() {
   /**
    * Function LLVM Init
    **/
-  void init_all_targets() {
-        LLVMInitializeAllTargets();
-        LLVMInitializeAllTargetInfos();
-        LLVMInitializeAllTargetMCs();
-        LLVMInitializeAllAsmPrinters();
-        LLVMInitializeAllAsmParsers();
-  }
-  void initModuleLLVM() {
-    // Inicializar os targets nativos para código JIT
-    //llvm::InitializeNativeTarget();
-    //llvm::InitializeNativeTargetAsmPrinter();
-    //llvm::InitializeNativeTargetAsmParser();
+   void init_all_targets() {
+    LLVMInitializeAllTargets();
+    LLVMInitializeAllTargetInfos();
+    LLVMInitializeAllTargetMCs();
+    LLVMInitializeAllAsmPrinters();
+    LLVMInitializeAllAsmParsers();
+}
+
+void initModuleLLVM() {
     init_all_targets();
-    // Criar contexto, builder e módulo principal
+
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
     module = std::make_unique<llvm::Module>("IsaLLVM", *context);
 
- 
-    std::string targetTriple = llvm::sys::getDefaultTargetTriple();
-    module->setTargetTriple(targetTriple);
-
+    std::string targetTripleStr = llvm::sys::getDefaultTargetTriple();
+    module->setTargetTriple(targetTripleStr);  
 
     std::string error;
-    const llvm::Target *target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+    const llvm::Target *target = llvm::TargetRegistry::lookupTarget(targetTripleStr, error);
     if (!target) {
-        llvm::errs() << "Erro ao encontrar o target: " << error << "\n";
+        llvm::errs() << "Error finding target: " << error << "\n";
         return;
     }
 
     llvm::TargetOptions opt;
-    targetMachine = std::unique_ptr<llvm::TargetMachine>(
-        target->createTargetMachine(targetTriple, "generic", "", opt, llvm::Reloc::PIC_)
+    auto targetMachine = target->createTargetMachine(
+        targetTripleStr,  
+        "generic", 
+        "", 
+        opt,
+        std::optional<llvm::Reloc::Model>(),
+        std::nullopt,
+        llvm::CodeGenOptLevel::Default
     );
 
+    if (!targetMachine) {
+        llvm::errs() << "Error creating target machine\n";
+        return;
+    }
+
     module->setDataLayout(targetMachine->createDataLayout());
-
-    // llvm::outs() << "Target inicializado com sucesso para o módulo " << module->getName() << "\n";
-
-    /*
-    llvm::SMDiagnostic err;
-    std::unique_ptr<llvm::Module> runtimeModule = llvm::parseIRFile("stdlib.ll", err, *context);
-    if (!runtimeModule) {
-        err.print("Erro ao carregar o arquivo IR", llvm::errs());
-        return;
-    }
-
-    if (llvm::Linker::linkModules(*module, std::move(runtimeModule))) {
-        llvm::errs() << "Erro ao vincular o módulo de runtime\n";
-        return;
-    }
-    */
-    // llvm::outs() << "Módulo de runtime vinculado com sucesso.\n";
 }
 
-  void salveModuleFile(const std::string& filename) {
+void saveModuleFile(const std::string& filename) {
     std::error_code errorCode;
     llvm::raw_fd_ostream fdLL(filename, errorCode);
+    if (errorCode) {
+        llvm::errs() << "Error opening file " << filename << ": " << errorCode.message() << "\n";
+        return;
+    }
     module->print(fdLL, nullptr);
-  }
+}
 
-  void saveModuleBinary(const std::string& filename) {
+void saveModuleBinary(const std::string& filename) {
     std::error_code ec;
     llvm::raw_fd_ostream dest(filename, ec, llvm::sys::fs::OF_None);
 
     if (ec) {
-        llvm::errs() << "Erro ao abrir o arquivo " << filename << ": " << ec.message() << "\n";
+        llvm::errs() << "Error opening file " << filename << ": " << ec.message() << "\n";
         return;
     }
 
-    // Configurar o pass manager para gerar o binário
+    if (!targetMachine) {
+        llvm::errs() << "Target machine not initialized!\n";
+        return;
+    }
+
     llvm::legacy::PassManager passManager;
     if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CodeGenFileType::ObjectFile)) {
-        llvm::errs() << "O alvo não suporta a geração de código objeto!\n";
+        llvm::errs() << "Target does not support object file generation!\n";
         return;
     }
 
     passManager.run(*module);
     dest.flush();
-    // llvm::outs() << "Binário final gerado em " << filename << "\n";
-    std::cout << termcolor::color<211, 54, 130> << "Binário final gerado em " << filename << "\n";
+    std::cout << termcolor::color<211, 54, 130> << "Object file generated: " << filename << "\n";
 }
+
 void linkObjectFile(const std::string& objectFilename, const std::string& outputExecutable) {
-    // Usa o clang para linkar o arquivo objeto e gerar o executável
     std::string command = "clang " + objectFilename + " -o " + outputExecutable + " -lSDL2";
     int result = std::system(command.c_str());
     
     if (result != 0) {
-        llvm::errs() << "Erro ao linkar o executável final.\n";
+        llvm::errs() << "Error linking executable\n";
     } else {
-        // llvm::outs() << "Target gerado com sucesso: " << outputExecutable << "\n";
         std::string targetTriple = module->getTargetTriple();
-        std::cout << termcolor::color<211, 54, 130> << "[-] " << targetTriple << " gerado com sucesso: " << outputExecutable << std::endl;
+        std::cout << termcolor::color<211, 54, 130> 
+                  << "[-] " << targetTriple << " executable generated: " 
+                  << outputExecutable << std::endl;
     }
 }
 
-  void generateExecutable(const std::string& filename) {
-    std::string objectFile = "output.o";
-    std::string executableFile = "output";
+void generateExecutable(const std::string& filename) {
+    std::string objectFile = filename + ".o";
+    std::string executableFile = filename;
 
-
-    // saveModuleBinary(objectFile);
-
-    // Linka o código objeto para gerar o executável
+    saveModuleBinary(objectFile);
     linkObjectFile(objectFile, executableFile);
 }
+
+
   std::unique_ptr<llvm::TargetMachine> targetMachine; 
   /**
    * Global LLVM Context.
@@ -390,7 +386,7 @@ void linkObjectFile(const std::string& objectFilename, const std::string& output
   
   llvm::Value *codegen() {
     // return builder->getInt32(0);
-    auto str = builder->CreateGlobalStringPtr("%i\n");
+    auto str = builder->CreateGlobalString("%i\n");
 
     auto printfn = module->getFunction("printf");
     std::vector<llvm::Value*> args {str};
@@ -399,7 +395,7 @@ void linkObjectFile(const std::string& objectFilename, const std::string& output
   }
   
   void externFunctions() {
-    auto bytePtr = builder->getInt8Ty()->getPointerTo();
+    auto bytePtr = llvm::PointerType::get(builder->getInt8Ty(), 0);
     module->getOrInsertFunction("printf", llvm::FunctionType::get(builder->getInt32Ty(), bytePtr, true));
   }
 

@@ -3,13 +3,13 @@
  * IsaLLVMCompilerLEXER
  *
  * */
-#include "lexer.hpp"
+#include "frontend/lexer/lexer.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
 #include <cctype>
 #include <unordered_map>
-#include "token.hpp"
+#include "frontend/lexer/token.hpp"
 
 
 

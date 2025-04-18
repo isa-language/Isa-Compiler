@@ -1,0 +1,23 @@
+@import "core.allocs"
+
+pub struct Data {
+    array: i32[5],
+    pub value: i32,
+}
+impl Data {
+    pub fn new(self, a: [i32, 5], v: i32) -> self {
+        self.array = a.move(); // a <= array && in type 
+        self.value = v;
+    }
+}
+
+
+fn main() {
+    let: ArenaAllocator arena = ArenaAllocator::new();
+    
+    let: Handle<i32> num = arena.alloc(42);
+    let: Handle<Data> data = arena.alloc(Data::new(i32 {1,2,3,4,5},33) );
+
+    println("Número: {}", num.get());
+    println("value: {}", data.get().value);
+}

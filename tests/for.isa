@@ -1,5 +1,0 @@
-fn main() -> i32 {
-    for (let: i32 i = 0; i < 10; i++) {
-        println("{}", i);
-    }
-}

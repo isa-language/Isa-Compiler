@@ -1,0 +1,3 @@
+// let -> inicialização de variavel, ref -> &, ref_mut = mut &  -> referencia mutavel
+
+// borrow check //

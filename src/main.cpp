@@ -1,19 +1,25 @@
-#include "src/lexer.hpp"
+#include "frontend/lexer/lexer.hpp"
+#include "frontend/lexer/token.hpp"
+
+#include "frontend/parser/parser.hpp"
 //#include "parser/ast.hpp"
-#include "src/token.hpp"
-#include "src/parser.hpp"
+#include "frontend/parser/parser_ast.hpp"
+#include "frontend/utils/file.hpp"
+
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
 #include "nametoken.hpp"
-#include "src/file.hpp"
-#include "flags.hpp"
-#include "src/parser_ast.hpp"
 
+#include "flags.hpp"
+
+#include "llvm/Support/Compiler.h"
 /* alterar valor no modo de compilação! */
 // #define DEBUG 0 // cmake -DENABLE_DEBUG=ON .. ou OFF 
 
 
+LLVM_ATTRIBUTE_USED int llvm::EnableABIBreakingChecks = 1;
 
 int main(int argc, char **argv) {
 #if DEBUG
@@ -23,21 +29,27 @@ int main(int argc, char **argv) {
 )";
     if(argc > 1) {
         codes = fileopen(std::string(argv[1]));
+    } else {
+        std::cerr << "No file specified: " << '\n';
+        return EXIT_FAILURE;
     }
-    std::vector<std::string> err = splitByErr(codes);
+
+
     Lexer lexer(codes);
-    IsaParser parser(lexer.tokenize(),argv[1],err);
+    IsaParser parser(lexer.tokenize(),argv[1]);
     auto AST = parser.parseProgram();
 
     IsaLLVM isa;
     if(!parser.getErr()) isa.exec(std::move(AST));
-   
-    
+
 #else
 
      std::string codes {"let:i32 num = 10;"};
     if(argc > 1) {
         codes = fileopen(std::string(argv[1]));
+    } else {
+        std::cerr << "Argumentos nao passados! " << '\n';
+        return EXIT_FAILURE;
     }
     // std::fstream open(); 
     

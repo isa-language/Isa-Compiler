@@ -2,7 +2,7 @@
 
 #ifndef IsaLLVM_AST_RENDER_TYPE
 #define IsaLLVM_AST_RENDER_TYPE
-#include "ast.hpp"
+#include "frontend/parser/ast.hpp"
 #include <memory>
 #include <cstdlib>
 

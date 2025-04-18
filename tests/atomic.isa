@@ -1,0 +1,20 @@
+@import "core.alloc"
+@import "repo.isa.alloc"
+// Arquivo de configuração do packet manager para definir mirrors de repositórios
+// e associar links de bibliotecas aos imports
+// Exemplo:
+/*
+    repo(
+        "(isa): https://github.com/isa-language/Isa-Compiler/tree/main/core/alloc",
+    );
+
+// Atomic<T> -> O tipo Atomic<T> permite modificações concorrentes sem mutexes (int, bool, float, etc.).
+
+fn main() {
+    let: Atomic<i32> x = 0;
+
+    spawn(fn() { x.add(1); });
+    spawn(fn() { x.add(1); });
+
+    print(x.get());  // 2
+}

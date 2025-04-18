@@ -1,5 +1,5 @@
-#include "ast.hpp"
-#include "parser.hpp"
+#include "frontend/parser/ast.hpp"
+#include "frontend/parser/parser.hpp"
 #include <llvm/IR/Value.h>
 
 #define DEFINE_ACCEPT_METHOD(NodeType) \
