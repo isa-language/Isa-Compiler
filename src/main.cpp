@@ -5,6 +5,8 @@
 //#include "parser/ast.hpp"
 #include "frontend/parser/parser_ast.hpp"
 #include "frontend/utils/file.hpp"
+#include "frontend/utils/results.hpp"
+#include "frontend/utils/initialized_flags.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -15,7 +17,6 @@
 #include "flags.hpp"
 
 #include "llvm/Support/Compiler.h"
-/* alterar valor no modo de compilação! */
 // #define DEBUG 0 // cmake -DENABLE_DEBUG=ON .. ou OFF 
 
 
@@ -23,24 +24,33 @@ LLVM_ATTRIBUTE_USED int llvm::EnableABIBreakingChecks = 1;
 
 int main(int argc, char **argv) {
 #if DEBUG
-    
-    std::string codes = R"(let:i32 test = 1000;
-        let:i32 num = 22;
-)";
-    if(argc > 1) {
-        codes = fileopen(std::string(argv[1]));
-    } else {
-        std::cerr << "No file specified: " << '\n';
+    Result<std::string> init_flags = inicialize_flags(argc, argv);
+    if(init_flags.is_err()) {
+        std::cerr << "Erro: " << init_flags.error.value();
         return EXIT_FAILURE;
+    }
+    Result<std::string> codes;
+    auto filename = get_input_filename();
+
+
+    if(filename.is_err()) {
+        std::cerr << "Erro: " << filename.error.value();
+        return EXIT_FAILURE;
+    } else {
+        codes = fileopen(std::string(filename.unwrap()));
+        if(codes.is_err()) {
+            std::cerr << codes.error.value();
+            return 0;
+        }
     }
 
 
-    Lexer lexer(codes);
+    Lexer lexer(codes.unwrap());
     IsaParser parser(lexer.tokenize(),argv[1]);
     auto AST = parser.parseProgram();
 
     IsaLLVM isa;
-    if(!parser.getErr()) isa.exec(std::move(AST));
+    if(!parser.getErr()) isa.exec(std::move(AST),get_output_filename());
 
 #else
 

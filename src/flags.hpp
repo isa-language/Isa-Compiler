@@ -1,60 +1,115 @@
-#pragma once 
+#pragma once
+
+#include "frontend/utils/results.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <map>
+#include <optional>
+#include <sstream>
 #include <string>
+#include <string_view>
+#include <unordered_map>
+#include <variant>
 #include <vector>
-#ifndef IsaLLVM_FLAGS_COMPILER
-#define IsaLLVM_FLAGS_COMPILER
-#define NAME_FILE 0
-#define GENERETE_BYTECODE 1
 
-struct Flagsmodel{
-  bool states;
-  int local;
-  std::string value;
+#ifndef ISA_LLVM_FLAGS_COMPILER
+#define ISA_LLVM_FLAGS_COMPILER
 
-  Flagsmodel(bool states, int local) : local(local), states(states) {} 
+enum class FlagType {
+    Bool,
+    String
 };
 
+enum class FlagID {
+    RunInputFile,
+    BuildInputFile,
+    OutputFile,
+    GenerateBytecode
+};
 
+struct Flag {
+    FlagType type;
+    FlagID id;
+    std::string longName;
+    std::optional<std::string> value;
+    bool active = false;
+};
 
-static std::vector<bool> flags(int argc, char **argv) {
-  std::vector<bool> flags {
-    false, // run time execute
-    false, // generete bytecode
-    false
-  };
-  std::map<std::string, Flagsmodel> flags_total {
-    {"-o", {true, NAME_FILE}},
-    {"--bytecode", {true, GENERETE_BYTECODE}}
-  };
-
-  for (int i = 0; i < argc; ++i) {
-    std::string arg(argv[i]);
-    if (arg.substr(0,1) == "-" && arg.substr(1,1) != "-") {
-      auto it = flags_total.find(arg);
-      if(it != flags_total.end()) {
-        flags[it->second.local] = it->second.states;
-      } 
-    } else if (arg.substr(0,1) == "-" && arg.substr(1,1) == "-") {
-      auto it = flags_total.find(arg);
-        if (it != flags_total.end() && i+1 < argc) {
-          std::string value(argv[i+1]);
-          if (value.substr(0,1) != "-") {
-            it->second.value = std::string(argv[i+1]);
-            flags[it->second.local] = it->second.states;  
-          } else {
-            
-            //exit(EXIT_FAILURE);
-          }
-        } else {
-       
-        //exit(EXIT_FAILURE);
-      } 
+class FlagParser {
+  std::stringstream err;
+public:
+    FlagParser() {
+        registerFlag("-o", "--output", FlagType::String, FlagID::OutputFile);
+        registerFlag("run", "--running", FlagType::String, FlagID::RunInputFile);
+        registerFlag("build", "--building", FlagType::String, FlagID::BuildInputFile);
+        registerFlag("-b", "--bytecode", FlagType::Bool, FlagID::GenerateBytecode);
     }
-  }
-  return flags;
-} 
 
-#endif // !FLAGS_DATABASE
+    bool parse(int argc, char** argv) {
+        for (int i = 1; i < argc; ++i) {
+            std::string arg(argv[i]);
+
+            auto it = flagsByName.find(arg);
+            if (it == flagsByName.end()) {
+                err << "Unknown flag: " << arg << "\n";
+                return false;
+            }
+
+            Flag& flag = flags[it->second];
+            flag.active = true;
+
+            if (flag.type == FlagType::String) {
+                if (i + 1 >= argc) {
+                    err << "Flag " << arg << " requires a value.\n";
+                    return false;
+                }
+                flag.value = argv[++i];
+            }
+        }
+        return true;
+    }
+
+    bool isActive(FlagID id) const {
+        for (const auto& [_, flag] : flags) {
+            if (flag.id == id)
+                return flag.active;
+        }
+        return false;
+    }
+
+    Result<std::string> getValue(FlagID id) const {
+        for (const auto& [_, flag] : flags) {
+            if (flag.id == id && flag.value)
+                return Result<std::string>::Ok(flag.value->c_str());
+        }
+        return Result<std::string>::Err("Invaled flags");
+    }
+
+    Result<std::string> getValue(std::vector<FlagID> id) const {
+        for(auto& fl : id ){
+            if(isActive(fl)) {
+                for (const auto& [_, flag] : flags) {
+                    if (flag.id == fl && flag.value)
+                        return Result<std::string>::Ok(flag.value->c_str());
+                }
+            }
+        }
+        return Result<std::string>::Err("Invaled flags");
+    }
+
+    Result<std::string> getErr() const {
+      return Result<std::string>::Err(err.str());
+    }
+private:
+    void registerFlag(std::string shortName, std::string longName, FlagType type, FlagID id) {
+        Flag flag{type, id, longName};
+        flags[shortName] = flag;
+        flagsByName[shortName] = shortName;
+        flagsByName[longName] = shortName;
+    }
+
+    std::unordered_map<std::string, Flag> flags;
+    std::unordered_map<std::string, std::string> flagsByName;
+};
+
+#endif // ISA_LLVM_FLAGS_COMPILER

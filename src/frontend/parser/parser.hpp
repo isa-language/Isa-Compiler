@@ -2,6 +2,8 @@
  * Isa to compiler parser in code LLVM.
  * */
 #pragma once 
+#include "flags.hpp"
+#include "frontend/utils/initialized_flags.hpp"
 #include <algorithm>
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
@@ -83,12 +85,13 @@ class IsaLLVM {
   llvm::IRBuilder<>& getBuilder() {
     return *builder;
   }
-  void exec(std::vector<std::unique_ptr<ASTNode>> program) {
-    
+  void exec(std::vector<std::unique_ptr<ASTNode>> program, std::string outputfile) {
+    this->output = outputfile;
     compiler(std::move(program));
 
     //module->print(llvm::outs(), nullptr);
-    saveModuleFile("out.ll");
+    saveModuleFile((output.empty() ? "out.ll" : output));
+    exec_program();
     //generateExecutable("out.o");
   }
 /*
@@ -99,7 +102,7 @@ class IsaLLVM {
   }
  */
   private:
-  
+  std::string output;
   /* compiler run */
 void compiler() {
     indicators::ProgressSpinner spinner{
@@ -210,7 +213,7 @@ void compiler() {
                 spinner.set_option(indicators::option::PrefixText{"✔"});
                 spinner.set_option(indicators::option::ShowSpinner{false});
                 spinner.set_option(indicators::option::ShowPercentage{false});
-                spinner.set_option(indicators::option::PostfixText{"Compilado com sucesso!"});
+                spinner.set_option(indicators::option::PostfixText{"Compiled successfully!"});
                 spinner.mark_as_completed();
                 break;
             } else {
@@ -227,7 +230,7 @@ void compiler() {
   void compiler(std::vector<std::unique_ptr<ASTNode>> program) {
     LLVMCodeGenVisitor visitor(&getBuilder(), context.get(), module.get());
     indicators::ProgressSpinner spinner{
-        indicators::option::PostfixText{"Compilando código Isa! 😼"},
+        indicators::option::PostfixText{"Compiling Isa code! 😼"},
         indicators::option::ForegroundColor{indicators::Color::yellow},
         indicators::option::SpinnerStates{std::vector<std::string>{"⠈", "⠐", "⠠", "⢀", "⡀", "⠄", "⠂", "⠁"}},
         indicators::option::FontStyles{std::vector<indicators::FontStyle>{indicators::FontStyle::bold}}
@@ -239,7 +242,7 @@ void compiler() {
                 spinner.set_option(indicators::option::PrefixText{"✔"});
                 spinner.set_option(indicators::option::ShowSpinner{false});
                 spinner.set_option(indicators::option::ShowPercentage{false});
-                spinner.set_option(indicators::option::PostfixText{"Compilado com sucesso!"});
+                spinner.set_option(indicators::option::PostfixText{"Compiled successfully! 😼"});
                 spinner.mark_as_completed();
                 break;
             } else {
@@ -333,6 +336,15 @@ void saveModuleBinary(const std::string& filename) {
     passManager.run(*module);
     dest.flush();
     std::cout << termcolor::color<211, 54, 130> << "Object file generated: " << filename << "\n";
+}
+
+
+// 
+void exec_program() {
+  std::string command = "lli " + output; 
+  if (flags.isActive(FlagID::RunInputFile)) {
+    int result = std::system(command.c_str());
+  }
 }
 
 void linkObjectFile(const std::string& objectFilename, const std::string& outputExecutable) {

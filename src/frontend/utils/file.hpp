@@ -1,4 +1,8 @@
 #pragma once 
+#include "flags.hpp"
+#include "frontend/utils/initialized_flags.hpp"
+#include "frontend/utils/results.hpp"
+#include "errors/err.hpp"
 #ifndef IsaLLVM_File
 #define IsaLLVM_File
 #include <stdexcept>
@@ -42,15 +46,37 @@ static std::string splitByStr(const std::string& str) {
     return env;
 }
 
-static std::string fileopen(const std::string& filename) {
-    std::fstream fs(filename, std::fstream::in);
-    std::stringstream ss;
-    if(!fs.is_open()) {
-        throw std::runtime_error("Não foi possivel abrir o arquivo! " + filename);
+inline Result<std::string> fileopen(const std::string& filename) {
+    std::ifstream fs(filename);
+    if (!fs.is_open()) {
+        return Result<std::string>::Err("Could not open file: " + filename + '\n');
     }
+    std::stringstream ss;
     ss << fs.rdbuf();
-    fs.close();
-    return ss.str();
+    return Result<std::string>::Ok(ss.str());
+}
+
+inline Result<std::string> get_input_filename() {
+    if (flags.isActive(FlagID::RunInputFile) || flags.isActive(FlagID::BuildInputFile)) {
+        std::string filename = flags.getValue({FlagID::RunInputFile,FlagID::BuildInputFile}).unwrap();
+        if (!filename.empty()) {
+            return filename;
+        } else {
+            return Result<std::string>::Err("Invalid filename after -o");
+        }
+    }
+
+    return Result<std::string>::Err("\033[1;33mNo input file specified.\n\033[0m");
+}
+
+inline std::string get_output_filename() {
+    if (flags.isActive(FlagID::OutputFile)) {
+        std::string outputname = flags.getValue(FlagID::OutputFile).unwrap();
+        if (!outputname.empty()) {
+            return outputname;
+        }
+    }
+    return "out.ll";
 }
 
 #endif // !
