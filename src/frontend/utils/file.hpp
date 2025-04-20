@@ -67,7 +67,7 @@ inline Result<std::string> get_input_filename() {
     }
 
 
-    return Result<std::string>::Err("\033[1;33mNo input file specified.\n\033[0m");
+    return Result<std::string>::Err("No input file specified.\n");
 }
 
 inline std::string get_output_filename() {

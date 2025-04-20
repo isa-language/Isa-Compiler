@@ -198,7 +198,7 @@ class IsaParser {
             if (!match(TOK_COLON)) error("Expected ':' after identifier");
             
             if (check(TOK_TYPE)) type = consume(TOK_TYPE);
-            else error("Expected type after ':'");
+            else error("Expected type after 'type'");
             parameters.push_back(std::make_unique<VariableDeclarationNode>(identifier.value, type.value));
         } while (match(TOK_COMMA));
         

@@ -2,8 +2,8 @@ extern fn puts(a: string) -> i32;
 extern fn printf(a:string) -> i32;
 
 
-fn main(argc: i32, argv: string) -> i32 {
-    let: string hello = "Hello, Wolrd 😀";
-    let: i32 num = 10 + 11 * 20 - 20 / 2;
+fn main(: i32, argv: ) ->  {
+    let: string  = "Hello, Wolrd 😀";
+    let:  num = 10 + 11 * 20 - 20 / 2;
     puts(hello);
 }

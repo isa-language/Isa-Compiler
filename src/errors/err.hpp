@@ -5,6 +5,8 @@
 
 #pragma once
 #include "frontend/lexer/token.hpp"
+#include "frontend/utils/utils_str.hpp"
+
 #include <vector>
 #ifndef IsaLLVM_ERR
 #define IsaLLVM_ERR

@@ -25,7 +25,8 @@ enum class FlagID {
     BuildInputFile,
     OutputFile,
     GenerateBytecode,
-    EmittLexer
+    EmittLexer,
+    Help
 };
 
 struct Flag {
@@ -34,6 +35,15 @@ struct Flag {
     std::string longName;
     std::optional<std::string> value;
     bool active = false;
+};
+
+static const char* flagDescriptions[] = {
+    "--output, -o <file>        Specify the output file name.",
+    "--running, run <file>      Run the specified input file.",
+    "--building, build <file>   Build (compile) the specified input file.",
+    "--bytecode, -b             Generate bytecode instead of native code.",
+    "--lexercode, -lex          Emit only the lexer code.",
+    "--helper, -h               Display this help message."
 };
 
 class FlagParser {
@@ -45,7 +55,7 @@ public:
         registerFlag("build", "--building", FlagType::String, FlagID::BuildInputFile);
         registerFlag("-b", "--bytecode", FlagType::Bool, FlagID::GenerateBytecode);
         registerFlag("-lex", "--lexercode", FlagType::Bool, FlagID::EmittLexer);
-
+        registerFlag("-h", "--helper", FlagType::Bool, FlagID::Help);
     }
 
     bool parse(int argc, char** argv) {
@@ -54,7 +64,7 @@ public:
 
             auto it = flagsByName.find(arg);
             if (it == flagsByName.end()) {
-                err << "Unknown flag: " << arg << "\n";
+                err << "Unknown flags: " << arg << '\n';
                 return false;
             }
 
