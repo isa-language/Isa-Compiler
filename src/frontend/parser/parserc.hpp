@@ -4,19 +4,15 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
-#include <iostream>
-#include <system_error>
 #include <vector>
-#include "token.hpp"
-#include "ast.hpp"
-#include "err.hpp"
+#include "frontend/lexer/token.hpp"
+#include "frontend/parser/ast.hpp"
 
 class IsaParser {
 private:
     std::vector<Token> tokens;
     int countertoken = 0;
     std::string filename;
-    std::vector<std::string>& errors;
     std::vector<std::unique_ptr<ASTNode>> program;
     bool err = false;
 
@@ -55,8 +51,8 @@ private:
 
 
 public:
-    IsaParser(const std::vector<Token>& tokens, const std::string& filename, std::vector<std::string>& errors)
-        : tokens(tokens), filename(filename), errors(errors) {}
+    IsaParser(const std::vector<Token> tokens, const std::string& filename)
+        : tokens(tokens), filename(filename) {}
 
     std::vector<std::unique_ptr<ASTNode>> parseProgram();
     bool getErr();

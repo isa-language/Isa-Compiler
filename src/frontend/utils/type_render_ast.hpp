@@ -24,4 +24,5 @@
 #define CREATE_STRING_LITERAL(VAL, NAME, CONSTANT) \
     std::make_unique<StringLiteralNode>(VAL, NAME, CONSTANT);
 
-#endif  
+#endif 
+

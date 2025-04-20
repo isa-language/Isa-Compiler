@@ -14,7 +14,7 @@ class Result {
 public:
     std::optional<T> value;
     std::optional<std::string> error;
-
+    explicit operator T() const { return value(); }
     static Result Ok(T val) {
         return Result{std::move(val), std::nullopt};
     }
@@ -73,6 +73,5 @@ public:
     const T* operator->() const { return &*value; }
     T* operator->() { return &*value; }
 };
-
 
 #endif

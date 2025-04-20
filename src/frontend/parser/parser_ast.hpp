@@ -34,7 +34,7 @@ class IsaParser {
         return currentToken().type == TOK_EOF || countertoken >= tokens.size();
     }
 
-    bool match(TokenType type) {
+    bool match(enum TokenType type) {
         if (!isAtEnd() && currentToken().type == type) {
             countertoken++;
             return true;
@@ -42,7 +42,7 @@ class IsaParser {
         return false;
     }
 
-    bool match(const std::initializer_list<TokenType>& types) {
+    bool match(const std::initializer_list<enum TokenType>& types) {
         for (auto type : types) {
             if (!isAtEnd() && currentToken().type == type) {
                 countertoken++;
@@ -52,11 +52,11 @@ class IsaParser {
         return false;
     }
 
-    bool check(TokenType type) const { 
+    bool check(enum TokenType type) const { 
         return !isAtEnd() && currentToken().type == type; 
     }
 
-    Token consume(TokenType type) {
+    Token consume(enum TokenType type) {
         if (!check(type)) {
             error("Unexpected token");
             return Token{TOK_ERROR, "", currentToken().line, currentToken().column};
@@ -66,7 +66,7 @@ class IsaParser {
         return value;
     }
 
-    void expect(TokenType type, const std::string& message) {
+    void expect(enum TokenType type, const std::string& message) {
         if (!match(type)) {
             error(message);
         }

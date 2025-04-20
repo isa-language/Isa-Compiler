@@ -5,7 +5,7 @@
 
 ---
 
-## ✨ Principais Objetivos
+## Principais Objetivos
 
 ✔ **Segurança garantida**  
 - Eliminação de vazamentos de memória e erros de concorrência  
@@ -18,7 +18,7 @@
 
 ---
 
-## 📜 Exemplo Básico
+## Exemplo Básico
 
 ```isa
 fn main() {
@@ -41,27 +41,27 @@ fn main() {
 
 ---  
 
-### ✨ Por que IsaLang?  
+### Por que IsaLang?  
 
-✅ **Sem dores de cabeça**  
+**Sem dores de cabeça**  
 - Proteção contra vazamentos e data races garantida pelo compilador  
 
-⚡ **Performance de baixo nível**  
+**Performance de baixo nível**  
 - Alocadores customizáveis (arena, stack, heap)  
 - Borrow checking simplificado para threads  
 
-🔄 **Concorrência acessível**  
+**Concorrência acessível**  
 - Corrotinas estilo Go com canais seguros  
 
-🧩 **Metaprogramação eficiente**  
+**Metaprogramação eficiente**  
 - Macros para otimizações e zero-cost abstractions  
 
 ---
 
-## 💻 Como experimentar
+## Como experimentar
 
 ```bash
-git clone https://github.com/isa-language/Isa-Compiler/
+git clone https://github.com/isa-language/isac
 ```
 
 ### 📌 Aviso importante  

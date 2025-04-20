@@ -1,7 +1,8 @@
-#include "parserc.hpp"
-#include "ast.hpp"
-#include "token.hpp"
-#include "type_render_ast.hpp"
+#include "frontend/parser/parserc.hpp"
+#include "errors/err.hpp"
+#include "frontend/lexer/token.hpp"
+#include "frontend/parser/ast.hpp"
+#include "frontend/utils/type_render_ast.hpp"
 #include <algorithm>
 #include <memory>
 #include <llvm/CodeGen/TargetFrameLowering.h>
@@ -20,7 +21,7 @@ if (match(TOKEN)) {  \
 
 void IsaParser::error(const std::string& message) {
     err = true;
-    Error(ErrorType::SyntaxError, message, previous().line, previous().column, filename).printError(errors);
+    Error(ErrorType::SyntaxError, message, previous().line, previous().column, filename).printError(tokens);
 }
 
 Token IsaParser::getToken() const {

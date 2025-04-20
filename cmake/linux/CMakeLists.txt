@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(IsaLLVM)
 
+get_filename_component(DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../" ABSOLUTE)
 
 set(LLVM_CMAKE_DIR "/usr/local/lib/cmake/llvm/")
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
@@ -32,18 +33,19 @@ endif()
 
 
 set(SOURCES
-    src/main.cpp
-    src/frontend/lexer/lexer.cpp
-    src/errors/err.cpp
-    src/frontend/parser/parser.cpp
-    src/frontend/parser/ast.cpp
+    ${DIR}/src/main.cpp
+    ${DIR}/src/frontend/lexer/lexer.cpp
+    ${DIR}/src/errors/err.cpp
+    ${DIR}/src/frontend/parser/parser.cpp
+    ${DIR}/src/frontend/parser/ast.cpp
 )
 
 add_executable(isa ${SOURCES})
 
 target_include_directories(isa PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${LLVM_INCLUDE_DIRS}
+    ${DIR}/src
+    ${DIR}/third_party/indicators/include
+    ${LLVM_INCDIRDIRLUDE_DIRS}
 )
 
 target_link_libraries(isa PRIVATE LLVM)

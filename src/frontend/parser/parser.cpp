@@ -1,6 +1,10 @@
 #include "parser.hpp"
 #include "ast.hpp"
+#ifdef _WIN32
+#include <malloc.h> 
+#else
 #include <alloca.h>
+#endif
 #include <iostream>
 #include <llvm-c/Core.h>
 #include <llvm/IR/DerivedTypes.h>

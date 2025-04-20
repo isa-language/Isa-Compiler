@@ -56,7 +56,5 @@ static const char* tokenStrings[] = {
 };
 
 
-
 #endif // !TOKENARRAY
-
 

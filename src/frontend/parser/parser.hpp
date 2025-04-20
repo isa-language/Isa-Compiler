@@ -43,6 +43,7 @@
 #include <vector>
 /* includes files project */
 #include "ast.hpp"
+
 #include <termcolor/termcolor.hpp>
 #include <indicators/progress_spinner.hpp>
 
@@ -57,11 +58,10 @@ using namespace indicators;
 
 class IsaLLVM {
   public:
-    IsaLLVM() {
-    
-    initModuleLLVM();
+    IsaLLVM(std::string outputfile) : output(outputfile){
+      initModuleLLVM();
     //externFunctions();
-  }
+    }
   /**
    * Execute program
    **/
@@ -85,14 +85,13 @@ class IsaLLVM {
   llvm::IRBuilder<>& getBuilder() {
     return *builder;
   }
-  void exec(std::vector<std::unique_ptr<ASTNode>> program, std::string outputfile) {
-    this->output = outputfile;
+  void exec(std::vector<std::unique_ptr<ASTNode>> program) {
     compiler(std::move(program));
 
-    //module->print(llvm::outs(), nullptr);
+    if(flags.isActive(FlagID::GenerateBytecode)) module->print(llvm::outs(), nullptr);
     saveModuleFile((output.empty() ? "out.ll" : output));
     exec_program();
-    //generateExecutable("out.o");
+    //generateExecutable(output);
   }
 /*
   void exec(std::vector<std::unique_ptr<ASTNode>> program, const std::string& filename) {
@@ -272,7 +271,7 @@ void initModuleLLVM() {
 
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    module = std::make_unique<llvm::Module>("IsaLLVM", *context);
+    module = std::make_unique<llvm::Module>(output, *context);
 
     std::string targetTripleStr = llvm::sys::getDefaultTargetTriple();
     module->setTargetTriple(targetTripleStr);  
@@ -335,6 +334,7 @@ void saveModuleBinary(const std::string& filename) {
 
     passManager.run(*module);
     dest.flush();
+
     std::cout << termcolor::color<211, 54, 130> << "Object file generated: " << filename << "\n";
 }
 
@@ -348,16 +348,17 @@ void exec_program() {
 }
 
 void linkObjectFile(const std::string& objectFilename, const std::string& outputExecutable) {
-    std::string command = "clang " + objectFilename + " -o " + outputExecutable + " -lSDL2";
+    std::string command = "clang " + objectFilename + " -o " + outputExecutable;
     int result = std::system(command.c_str());
     
     if (result != 0) {
         llvm::errs() << "Error linking executable\n";
     } else {
         std::string targetTriple = module->getTargetTriple();
+
         std::cout << termcolor::color<211, 54, 130> 
-                  << "[-] " << targetTriple << " executable generated: " 
-                  << outputExecutable << std::endl;
+        << "[-] " << targetTriple << " executable generated: " 
+        << outputExecutable << std::endl;
     }
 }
 

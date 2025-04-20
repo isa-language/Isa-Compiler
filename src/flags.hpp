@@ -24,7 +24,8 @@ enum class FlagID {
     RunInputFile,
     BuildInputFile,
     OutputFile,
-    GenerateBytecode
+    GenerateBytecode,
+    EmittLexer
 };
 
 struct Flag {
@@ -43,6 +44,8 @@ public:
         registerFlag("run", "--running", FlagType::String, FlagID::RunInputFile);
         registerFlag("build", "--building", FlagType::String, FlagID::BuildInputFile);
         registerFlag("-b", "--bytecode", FlagType::Bool, FlagID::GenerateBytecode);
+        registerFlag("-lex", "--lexercode", FlagType::Bool, FlagID::EmittLexer);
+
     }
 
     bool parse(int argc, char** argv) {
