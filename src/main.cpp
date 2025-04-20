@@ -21,19 +21,12 @@
 
 #ifdef _WIN32
 
-#include <windows.h>
 #include <io.h>
 #include <fcntl.h>
 #include <windows.h>
 extern "C" {LLVM_ATTRIBUTE_USED int EnableABIBreakingChecks = 1;}
 #elif defined(__linux__)
 LLVM_ATTRIBUTE_USED int llvm::EnableABIBreakingChecks = 1;
-#endif
-
-#ifdef _WIN32
-    #include <windows.h>
-    #include <io.h>
-    #include <fcntl.h>
 #endif
 
 void enable_utf8_console() {

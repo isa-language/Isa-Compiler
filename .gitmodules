@@ -2,7 +2,6 @@
 	path = llvm-isalang
 	url = https://github.com/llvm/llvm-project.git
     branch = llvmorg-19.1.7
-    update = none 
 [submodule "third_party/termcolor"]
 	path = third_party/termcolor
 	url = https://github.com/ikalnytskyi/termcolor.git
