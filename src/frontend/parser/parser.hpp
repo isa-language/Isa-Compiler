@@ -4,11 +4,11 @@
 #pragma once 
 #include "flags.hpp"
 #include "frontend/utils/initialized_flags.hpp"
-#include <algorithm>
+#include <cstddef>
+#include <cstdio>
 #ifndef isaLLVMPARSER
 #define isaLLVMPARSER
 #include <llvm/MC/TargetRegistry.h>
-#include "frontend/lexer/token.hpp"
 #include <iostream>
 #include <utility>
 /* includes header LLVM */
@@ -43,11 +43,6 @@
 #include <vector>
 /* includes files project */
 #include "ast.hpp"
-
-#include <termcolor/termcolor.hpp>
-#include <indicators/progress_spinner.hpp>
-
-using namespace indicators;
 
 #include "llvm/IRReader/IRReader.h" 
 #include "llvm/Linker/Linker.h"
@@ -102,7 +97,7 @@ class IsaLLVM {
  */
   private:
   std::string output;
-  /* compiler run */
+  /* compiler run 
 void compiler() {
     indicators::ProgressSpinner spinner{
         indicators::option::PostfixText{"Compilando código Isa! 😼"},
@@ -138,7 +133,6 @@ void compiler() {
 
     function = std::make_unique<FunctionNode>("main", "i32", std::move(functionParams), std::move(functionBody));
     program.push_back(std::move(function));
-    /*
     std::vector<std::unique_ptr<VariableDeclarationNode>> printfParams;
     printfParams.push_back(std::make_unique<VariableDeclarationNode>("format", "string", std::make_unique<StringLiteralNode>("\"%d\\n\"")));
     //printfParams.push_back(std::make_unique<VariableDeclarationNode>("value", "i32", std::make_unique<IntegerLiteralNode>("i", 0)));
@@ -204,7 +198,7 @@ void compiler() {
 
     function = std::make_unique<FunctionNode>("main", "i32", std::move(functionParams), std::move(functionBody));
     program.push_back(std::move(function));
-    */
+
     for (int i = 0; i < program.size(); i++) {
         program[i]->accept(visitor);
         if (i == program.size()-1) {
@@ -222,35 +216,18 @@ void compiler() {
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
 }
-
+*/
 
 
 
   void compiler(std::vector<std::unique_ptr<ASTNode>> program) {
+
     LLVMCodeGenVisitor visitor(&getBuilder(), context.get(), module.get());
-    indicators::ProgressSpinner spinner{
-        indicators::option::PostfixText{"Compiling Isa code! 😼"},
-        indicators::option::ForegroundColor{indicators::Color::yellow},
-        indicators::option::SpinnerStates{std::vector<std::string>{"⠈", "⠐", "⠠", "⢀", "⡀", "⠄", "⠂", "⠁"}},
-        indicators::option::FontStyles{std::vector<indicators::FontStyle>{indicators::FontStyle::bold}}
-    };
-    for (int i = 0; i < program.size(); i++) {
-        program[i]->accept(visitor);
-        if (i == program.size()-1) {
-                spinner.set_option(indicators::option::ForegroundColor{indicators::Color::green});
-                spinner.set_option(indicators::option::PrefixText{"✔"});
-                spinner.set_option(indicators::option::ShowSpinner{false});
-                spinner.set_option(indicators::option::ShowPercentage{false});
-                spinner.set_option(indicators::option::PostfixText{"Compiled successfully! 😼"});
-                spinner.mark_as_completed();
-                break;
-            } else {
-                
-                spinner.tick();
-            }
-            //std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    for(size_t i = 0; i < program.size(); i++) {
+      //print_progress(i+1, program.size());
+      program[i]->accept(visitor);
     }
-    
+    wprintf(L"Compiled successfully!\n");
   }
 
 
@@ -259,12 +236,12 @@ void compiler() {
    * Function LLVM Init
    **/
    void init_all_targets() {
-    LLVMInitializeAllTargets();
-    LLVMInitializeAllTargetInfos();
-    LLVMInitializeAllTargetMCs();
-    LLVMInitializeAllAsmPrinters();
-    LLVMInitializeAllAsmParsers();
-}
+      LLVMInitializeAllTargets();
+      LLVMInitializeAllTargetInfos();
+      LLVMInitializeAllTargetMCs();
+      LLVMInitializeAllAsmPrinters();
+      LLVMInitializeAllAsmParsers();
+    }
 
 void initModuleLLVM() {
     init_all_targets();
@@ -300,6 +277,17 @@ void initModuleLLVM() {
     }
 
     module->setDataLayout(targetMachine->createDataLayout());
+
+    llvm::SMDiagnostic err;
+    std::unique_ptr<llvm::Module> runtimeModule = llvm::parseIRFile("/home/guilherme/isac/lib/println.ll", err, *context);
+    if (!runtimeModule) {
+        err.print("Erro ao carregar o arquivo IR", llvm::errs());
+        return;
+    }
+    if (llvm::Linker::linkModules(*module, std::move(runtimeModule))) {
+        llvm::errs() << "Erro ao vincular o módulo de runtime\n";
+        return;
+    }
 }
 
 void saveModuleFile(const std::string& filename) {
@@ -335,7 +323,7 @@ void saveModuleBinary(const std::string& filename) {
     passManager.run(*module);
     dest.flush();
 
-    std::cout << termcolor::color<211, 54, 130> << "Object file generated: " << filename << "\n";
+    std::cout << "Object file generated: " << filename << "\n";
 }
 
 
@@ -356,9 +344,7 @@ void linkObjectFile(const std::string& objectFilename, const std::string& output
     } else {
         std::string targetTriple = module->getTargetTriple();
 
-        std::cout << termcolor::color<211, 54, 130> 
-        << "[-] " << targetTriple << " executable generated: " 
-        << outputExecutable << std::endl;
+        std::cout << "[-] " << targetTriple << " executable generated: " << outputExecutable << std::endl;
     }
 }
 

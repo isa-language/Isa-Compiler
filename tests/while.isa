@@ -1,0 +1,11 @@
+fn println(var: string) -> void;
+
+
+fn main() -> i32 {
+    let: i32 count = 0;
+    while(true) {
+        count = count + 1;
+        println("while %d", count);
+    }
+    return 0;
+}

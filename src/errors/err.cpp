@@ -1,12 +1,12 @@
 #include "frontend/lexer/token.hpp"
 #include "errors/err.hpp"
 #include <cwchar>
+#include <iostream>
 #include <string>
 #include <cstdio>
 #include <vector>
 #include <cmath>
 #include <iomanip>
-#include "frontend/utils/file.hpp"
 #ifdef _WIN32
     #define COLOR_RED     L"\033[1;31m"
     #define COLOR_YELLOW  L"\033[1;33m"

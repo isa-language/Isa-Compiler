@@ -167,12 +167,20 @@ llvm::Value* LLVMCodeGenVisitor::visit(ArrayTypeNode &node) {
     return arrayAlloc; 
 }
 
+llvm::Value* LLVMCodeGenVisitor::visit(BoolLiteralNode& node) {
 
+    return llvm::ConstantInt::get(
+        *context, 
+        llvm::APInt(1, node.getValue() ? 1 : 0)
+    );
+}
 
 llvm::Value* LLVMCodeGenVisitor::visit(ExpressionStatementNode &node) {
     llvm::Value* exprValue = node.expression->accept(*this);
     return nullptr;
 }
+
+
 llvm::Value* LLVMCodeGenVisitor::visit(VariableValueNode &node) {
     llvm::Value* variable = lookupVariable(node.getName());
     if (!variable) {
@@ -388,7 +396,6 @@ llvm::Value* LLVMCodeGenVisitor::visit(FunctionCallNode &node) {
             argValues.push_back(arg->accept(*this));
         }
         if (it->second == "void") {
-            
             return builder->CreateCall(function, argValues);
         } else {
             return builder->CreateCall(function, argValues, "calltmp");
@@ -485,7 +492,6 @@ llvm::Value* LLVMCodeGenVisitor::visit(BinaryExpressionNode &node) {
         right = builder->CreateLoad(getLLVMType(varDecl->getType()), right, "load_right");
     }
 
-
     if (left->getType()->isHalfTy()) {
         llvm::Type* floatType = llvm::Type::getFloatTy(*context);
         left = builder->CreateFPExt(left, floatType, "promote_left");
@@ -517,11 +523,31 @@ llvm::Value* LLVMCodeGenVisitor::visit(BinaryExpressionNode &node) {
         } else if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
             return builder->CreateMul(left, right, "multmp");
         }
+    } else if (node.op == "**") {
+        if (leftType->isFloatTy() && rightType->isFloatTy()) {
+
+            llvm::Function* powFunc = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::pow, {leftType});
+            return builder->CreateCall(powFunc, {left, right}, "powtmp");
+        } else if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
+
+            llvm::Function* powFunc = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::pow, 
+                {llvm::Type::getDoubleTy(*context)});
+            llvm::Value* leftDbl = builder->CreateSIToFP(left, llvm::Type::getDoubleTy(*context), "leftdbl");
+            llvm::Value* rightDbl = builder->CreateSIToFP(right, llvm::Type::getDoubleTy(*context), "rightdbl");
+            llvm::Value* resultDbl = builder->CreateCall(powFunc, {leftDbl, rightDbl}, "powtmp");
+            return builder->CreateFPToSI(resultDbl, leftType, "powint");
+        }
     } else if (node.op == "/") {
         if (leftType->isFloatTy() && rightType->isFloatTy()) {
             return builder->CreateFDiv(left, right, "divtmp");
         } else if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
             return builder->CreateSDiv(left, right, "divtmp");
+        }
+    } else if (node.op == "%") {
+        if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
+            return builder->CreateSRem(left, right, "remtmp");
+        } else if (leftType->isFloatTy() && rightType->isFloatTy()) {
+            return builder->CreateFRem(left, right, "remtmp");
         }
     } else if (node.op == "<") {
         if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
@@ -529,7 +555,7 @@ llvm::Value* LLVMCodeGenVisitor::visit(BinaryExpressionNode &node) {
         } else if (leftType->isFloatTy() && rightType->isFloatTy()) {
             return builder->CreateFCmpULT(left, right, "cmp_lt");
         }
-    }  else if (node.op == ">") {
+    } else if (node.op == ">") {
         if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
             return builder->CreateICmpSGT(left, right, "cmp_gt");
         } else if (leftType->isFloatTy() && rightType->isFloatTy()) {
@@ -574,7 +600,46 @@ llvm::Value* LLVMCodeGenVisitor::visit(BinaryExpressionNode &node) {
                     throw std::runtime_error("Incompatible types for '+=' operation");
                 }
                 builder->CreateStore(updatedValue, ptr);
-
+                return updatedValue;
+            } else {
+                throw std::runtime_error("Variable not found: " + varDecl->getName());
+            }
+        }
+    } else if (node.op == "++") {
+        auto varDecl = dynamic_cast<VariableReferenceNode*>(node.left.get());
+        if (varDecl) {
+            llvm::Value* ptr = lookupVariable(varDecl->getName());
+            if (ptr) {
+                llvm::Value* currentValue = builder->CreateLoad(getLLVMType(varDecl->getType()), ptr, "current_value");
+                llvm::Value* updatedValue;
+                if (currentValue->getType()->isIntegerTy()) {
+                    updatedValue = builder->CreateAdd(currentValue, llvm::ConstantInt::get(leftType, 1), "inc_value");
+                } else if (currentValue->getType()->isFloatTy()) {
+                    updatedValue = builder->CreateFAdd(currentValue, llvm::ConstantFP::get(leftType, 1.0), "inc_value");
+                } else {
+                    throw std::runtime_error("Invalid type for '++' operation");
+                }
+                builder->CreateStore(updatedValue, ptr);
+                return updatedValue;
+            } else {
+                throw std::runtime_error("Variable not found: " + varDecl->getName());
+            }
+        }
+    } else if (node.op == "--") {
+        auto varDecl = dynamic_cast<VariableReferenceNode*>(node.left.get());
+        if (varDecl) {
+            llvm::Value* ptr = lookupVariable(varDecl->getName());
+            if (ptr) {
+                llvm::Value* currentValue = builder->CreateLoad(getLLVMType(varDecl->getType()), ptr, "current_value");
+                llvm::Value* updatedValue;
+                if (currentValue->getType()->isIntegerTy()) {
+                    updatedValue = builder->CreateSub(currentValue, llvm::ConstantInt::get(leftType, 1), "dec_value");
+                } else if (currentValue->getType()->isFloatTy()) {
+                    updatedValue = builder->CreateFSub(currentValue, llvm::ConstantFP::get(leftType, 1.0), "dec_value");
+                } else {
+                    throw std::runtime_error("Invalid type for '--' operation");
+                }
+                builder->CreateStore(updatedValue, ptr);
                 return updatedValue;
             } else {
                 throw std::runtime_error("Variable not found: " + varDecl->getName());
@@ -584,8 +649,6 @@ llvm::Value* LLVMCodeGenVisitor::visit(BinaryExpressionNode &node) {
 
     throw std::runtime_error("Invalid operand types for operation: " + node.op);
 }
-
-
 
 
 
@@ -639,30 +702,50 @@ llvm::Value* LLVMCodeGenVisitor::visit(IfNode &node) {
     return nullptr; 
 }
 
-
 llvm::Value* LLVMCodeGenVisitor::visit(WhileNode &node) {
     llvm::Function *function = builder->GetInsertBlock()->getParent();
 
-    llvm::BasicBlock *entryBB = builder->GetInsertBlock();
-    llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(*context, "loop", function);
-    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*context, "body", function);
-    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(*context, "after_loop", function);
+    llvm::BasicBlock *condBB = llvm::BasicBlock::Create(*context, "while.cond", function);
+    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*context, "while.body", function);
+    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(*context, "while.end", function);
 
-    builder->CreateBr(loopBB);
-    builder->SetInsertPoint(loopBB);
+    builder->CreateBr(condBB);
 
+    builder->SetInsertPoint(condBB);
     llvm::Value *condValue = node.condition->accept(*this);
+    if (!condValue) {
+        return nullptr; 
+    }
+
+    if (condValue->getType()->isIntegerTy(1)) {
+    } else if (condValue->getType()->isIntegerTy()) {
+        condValue = builder->CreateICmpNE(
+            condValue, 
+            llvm::ConstantInt::get(condValue->getType(), 0), 
+            "while.cond.bool"
+        );
+    } else {
+        return nullptr;
+    }
+
     builder->CreateCondBr(condValue, bodyBB, afterBB);
 
-    builder->SetInsertPoint(bodyBB);
-    node.body->accept(*this);
 
-    builder->CreateBr(loopBB);
+    builder->SetInsertPoint(bodyBB);
+    if (!node.body->accept(*this)) {
+        return nullptr; 
+    }
+
+    if (!bodyBB->getTerminator()) {
+        builder->CreateBr(condBB);
+    }
 
     builder->SetInsertPoint(afterBB);
 
-    return nullptr; 
+    return nullptr;
 }
+
+
 
 
 llvm::Value* LLVMCodeGenVisitor::visit(ForNode &node) {
@@ -698,13 +781,16 @@ llvm::Value* LLVMCodeGenVisitor::visit(ForNode &node) {
 llvm::Value* LLVMCodeGenVisitor::visit(AssignmentNode &node) {
     llvm::Value* exprValue = node.expression->accept(*this);
 
-    llvm::Value* varValue = getVariable(node.variableName);
+    llvm::Value* variable = lookupVariable(node.variableName);
+    if (!variable) {
+        variable = variables[node.variableName];
+    }
 
-    if (!varValue) {
+    if (!variable) {
         throw std::runtime_error("Variable not found: " + node.variableName);
     }
 
-    return builder->CreateStore(exprValue, varValue);
+    return builder->CreateStore(exprValue, variable);
 }
 
 llvm::Value* LLVMCodeGenVisitor::visit(BlockNode &node) {

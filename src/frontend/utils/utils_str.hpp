@@ -8,7 +8,7 @@
 #include <sstream>
 #include <fcntl.h>
 
-static std::wstring char_to_wstring(const char* input) {
+static inline std::wstring char_to_wstring(const char* input) {
     if (!input) return L"";
 
     int inputLength = static_cast<int>(strlen(input));
@@ -20,11 +20,9 @@ static std::wstring char_to_wstring(const char* input) {
     MultiByteToWideChar(CP_UTF8, 0, input, inputLength, &wstr[0], size);
     wstr.pop_back();
     return wstr;
-
-
 }
 
-static std::wstring string_to_wstring(const std::string& str) {
+static inline std::wstring string_to_wstring(const std::string& str) {
     if (str.empty()) return L"";
     
     int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
@@ -36,7 +34,7 @@ static std::wstring string_to_wstring(const std::string& str) {
     return wstr;
 }
 
-static std::wstring int_to_wstring(int value) {
+static inline std::wstring int_to_wstring(int value) {
     std::wstringstream wss;
     wss << value;
     return wss.str();

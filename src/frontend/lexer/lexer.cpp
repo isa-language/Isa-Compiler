@@ -62,7 +62,7 @@ Token Lexer::handleIdentifierOrKeyword() {
         {"let", TOK_LET}, {"fn", TOK_FN}, {"struct", TOK_STRUCT}, {"return", TOK_RETURN},
         {"for", TOK_FOR}, {"while", TOK_WHILE}, {"if", TOK_IF}, {"else", TOK_ELSE},
         {"switch", TOK_SWITCH}, {"case", TOK_CASE}, {"default", TOK_DEFAULT}, {"new", TOK_NEW},
-        {"extern", TOK_EXTERN},
+        {"extern", TOK_EXTERN}, {"true", TOK_BOOL_LITERAL}, {"false",TOK_BOOL_LITERAL}
     };
 
     auto it = keywords.find(value);
@@ -158,18 +158,37 @@ Token Lexer::handleOperatorOrDelimiter() {
         case '}': return Token(TOK_RBRACE, "}", line, startColumn);
         case '[': return Token(TOK_LBRACKET, "[", line, startColumn);
         case ']': return Token(TOK_RBRACKET, "]", line, startColumn);
-        case '+': return Token(TOK_PLUS, "+", line, startColumn);
+        case '+': {
+            if(source[position] == '+') {
+                position++;
+                column++;
+                return Token(TOK_PLUSPLUS, "++", line, startColumn);
+            }
+            return Token(TOK_PLUS, "+", line, startColumn);
+        }
         case '-': {
             if (source[position] == '>') {
                 position++;
                 column++;
                 return Token(TOK_ARROW, "->", line, startColumn);
+            } else if(source[position] == '-') {
+                position++;
+                column++;
+                return Token(TOK_MINUSMINUS, "--", line, startColumn);
             }
             return Token(TOK_MINUS, "-", line, startColumn);
         }
-        case '*': return Token(TOK_STAR, "*", line, startColumn);
+        case '*': {
+            if (source[position] == '*') {
+                position++;
+                column++;
+                return Token(TOK_STARSTAR, "**", line, startColumn);
+            }
+            return Token(TOK_STAR, "*", line, startColumn);
+        }
         case '&': return Token(TOK_STAR, "&", line, startColumn);
         case '/': return Token(TOK_SLASH, "/", line, startColumn);
+        case '%': return Token(TOK_PERCENT, "%", line, startColumn);
         case '!':
             if (source[position] == '=') {
                 position++;

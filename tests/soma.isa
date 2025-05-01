@@ -1,0 +1,21 @@
+fn println(a:string) -> void; 
+fn printf(a:string) -> i32;
+fn scanf(a:string) -> i32;
+
+
+fn main(a: i32, argv: i32) -> i32 {
+    let: i32 valor1;
+    let: i32 valor2;
+    printf("Digite o valor 1: ");
+    scanf("%d", &valor1);
+    printf("Digite o valor 2: ");
+    scanf("%d", &valor2);
+    let: i32 res = valor1 * valor2;
+    let: i8 gui = 4 ** 2;
+    println("A resposta é %i",gui);
+    // println("%d", 10 * 2 / 4 + 10);
+    while(true) {
+        println("Eu sou lindo");
+    }
+    return 0;
+}

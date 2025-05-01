@@ -1,0 +1,16 @@
+fn println(a:string) -> void;
+fn printf(a:string) -> i32;
+
+fn add(a: i32, b: i32) -> i32 {
+    let: i32 test = 10;
+    return a + b + test;
+}
+
+fn main() -> i32 {
+    let: i32 valor = 10;
+    valor = -20 + 10;
+
+    let: i32 exp = 10 * (2 + 4) * (2 + valor);
+    println("valor da exp %d", exp);
+    return 0;
+}

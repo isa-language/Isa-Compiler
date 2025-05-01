@@ -1,13 +1,12 @@
 #pragma once 
 #include <optional>
-#include <stdexcept>
 #include <string>
 #ifndef RESULT_UTILS_ISA
 #define RESULT_UTILS_ISA
 #include <optional>
 #include <string>
 #include <utility>
-#include <stdexcept>
+
 
 template<typename T>
 class Result {

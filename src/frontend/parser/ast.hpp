@@ -1,5 +1,4 @@
 #pragma once 
-#include <algorithm>
 #include <llvm/IR/Type.h>
 #ifndef IsaLLVM_AST
 #define IsaLLVM_AST
@@ -9,7 +8,6 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-#include <iostream>
 #include <memory>
 #include <vector>
 #include <string>
@@ -22,6 +20,7 @@ class VariableReferenceNode;
 class VariableValueNode;
 class ArrayTypeNode;
 class IntegerLiteralNode;
+class BoolLiteralNode;
 class StringLiteralNode;
 class StructDeclarationNode;
 class StructInstantiationNode;
@@ -52,6 +51,7 @@ class Visitor {
   DEFINE_VISITOR_METHOD(ArrayTypeNode)
   DEFINE_VISITOR_METHOD(VariableReferenceNode)
   DEFINE_VISITOR_METHOD(IntegerLiteralNode)
+  DEFINE_VISITOR_METHOD(BoolLiteralNode)
   DEFINE_VISITOR_METHOD(StringLiteralNode)
   DEFINE_VISITOR_METHOD(StructDeclarationNode)
   DEFINE_VISITOR_METHOD(StructInstantiationNode)
@@ -93,6 +93,7 @@ public:
   DEFINE_VISITOR_IMPLEMENTATION(VariableValueNode)
   DEFINE_VISITOR_IMPLEMENTATION(ArrayTypeNode)
   DEFINE_VISITOR_IMPLEMENTATION(IntegerLiteralNode)
+  DEFINE_VISITOR_IMPLEMENTATION(BoolLiteralNode)
   DEFINE_VISITOR_IMPLEMENTATION(StringLiteralNode)
   DEFINE_VISITOR_IMPLEMENTATION(StructDeclarationNode)
   DEFINE_VISITOR_IMPLEMENTATION(StructInstantiationNode)
@@ -391,6 +392,24 @@ public:
 };
 
 
+class BoolLiteralNode : public ASTNode {
+    bool value;
+    std::string type;
+
+public:
+    BoolLiteralNode(bool val, std::string type = "i1") 
+        : value(val), type(std::move(type)) {}
+
+    DECLARE_ACCEPT_VISITOR
+
+    bool getValue() const { return value; }
+    const std::string& getType() const { return type; }
+
+    std::string toString() {
+        return value ? "true" : "false";
+    }
+};
+
 class BinaryExpressionNode : public ASTNode {
 public:
 
@@ -436,9 +455,9 @@ public:
 class WhileNode : public ASTNode {
 public:
     std::unique_ptr<ASTNode> condition;
-    std::unique_ptr<ASTNode> body;
+    std::unique_ptr<BlockNode> body;
 
-    WhileNode(std::unique_ptr<ASTNode> cond, std::unique_ptr<ASTNode> b)
+    WhileNode(std::unique_ptr<ASTNode> cond, std::unique_ptr<BlockNode> b)
         : condition(std::move(cond)), body(std::move(b)) {}
 
     DECLARE_ACCEPT_VISITOR
@@ -461,9 +480,9 @@ public:
 class AssignmentNode : public ASTNode {
 public:
     std::string variableName;
-    std::unique_ptr<BinaryExpressionNode> expression;
+    std::unique_ptr<ASTNode> expression;
 
-    AssignmentNode(const std::string &varName, std::unique_ptr<BinaryExpressionNode> expr)
+    AssignmentNode(const std::string &varName, std::unique_ptr<ASTNode> expr)
         : variableName(varName), expression(std::move(expr)) {}
 
     DECLARE_ACCEPT_VISITOR

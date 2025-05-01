@@ -44,8 +44,6 @@ add_executable(isa ${SOURCES})
 
 target_include_directories(isa PRIVATE
     ${DIR}/src
-    ${DIR}/third_party/indicators/include
-    ${LLVM_INCDIRDIRLUDE_DIRS}
 )
 
 target_link_libraries(isa PRIVATE LLVM)

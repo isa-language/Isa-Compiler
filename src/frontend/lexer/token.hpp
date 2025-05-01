@@ -39,8 +39,11 @@ enum TokenType {
     TOK_LBRACKET,  // '['
     TOK_RBRACKET,  // ']'
     TOK_PLUS,  // '+'
+    TOK_PLUSPLUS, // '++'
     TOK_MINUS,  // '-'
+    TOK_MINUSMINUS, // '--'
     TOK_STAR,  // '*'
+    TOK_STARSTAR, // '**'
     TOK_SLASH,  // '/'
     TOK_EQUAL,  // '=='
     TOK_NOT_EQUAL,  // '!='
@@ -51,6 +54,7 @@ enum TokenType {
     TOK_COLON,  // ':'
     TOK_DOT,  // '.'
     TOK_AMP,    //&
+    TOK_PERCENT,  // %
 
     // End of File
     TOK_EOF,
@@ -60,12 +64,12 @@ enum TokenType {
 };
 
 struct Token {
-    TokenType type;
+    enum TokenType type;
     std::string value;
     int line;
     int column;
 
-    Token(TokenType type, const std::string& value, int line, int column)
+    Token(enum TokenType type, const std::string& value, int line, int column)
         : type(type), value(value), line(line), column(column) {}
     Token() {}
 };

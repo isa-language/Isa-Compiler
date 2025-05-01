@@ -21,7 +21,7 @@ void print_help() {
     #ifdef _WIN32
     wprintf(L"usage: isa <OPTION>... [<COMPONENT>...]\n\nOptions:\n");
     #else 
-        std::cout << "Options:" << '\n';
+        std::cout << "usage: isa <OPTION>... [<COMPONENT>...]\n\nOptions:" << '\n';
     #endif
     for(auto descrip : flagDescriptions) {
         #ifdef _WIN32
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     auto AST = parser.parseProgram();
 
     IsaLLVM isa(get_output_filename());
-    if(!parser.getErr()) isa.exec(std::move(AST));
+    if(!parser.hasError()) isa.exec(std::move(AST));
     if(flags.isActive(FlagID::EmittLexer)) {
         #ifdef _WIN32
             wprintf(L"\n\nTokens emitt:\n\n");

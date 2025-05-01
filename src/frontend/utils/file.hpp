@@ -2,10 +2,8 @@
 #include "flags.hpp"
 #include "frontend/utils/initialized_flags.hpp"
 #include "frontend/utils/results.hpp"
-#include "errors/err.hpp"
 #ifndef IsaLLVM_File
 #define IsaLLVM_File
-#include <stdexcept>
 #include <string>
 #include <fstream>
 #include <sstream>

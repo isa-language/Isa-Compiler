@@ -59,8 +59,6 @@ add_executable(isa.exe ${SOURCES})
 
 target_include_directories(isa.exe PRIVATE
     ${ROOT_DIR}/src
-    ${ROOT_DIR}/third_party/indicators/include
-    ${ROOT_DIR}/third_party/termcolor/include
 
     ${LLVM_INCLUDE_DIRS}
 )
